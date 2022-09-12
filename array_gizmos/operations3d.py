@@ -10,16 +10,20 @@ def positive_slicing(M):
     """
     for 3d matrix M determine I,J,K (start, end) slicing of minimal volume containing all positive M[i,j,k]
     """
+    def minmax(nz):
+        m = max(nz.min()-1, 0)
+        M = nz.max() + 1
+        return (m, M)
     slices = np.zeros((3, 2), dtype=np.int)
     Itest = M.max(axis=2).max(axis=1)
     (inz,) = np.nonzero(Itest > 0)
-    slices[0] = (inz.min(), inz.max()+1)
+    slices[0] = minmax(inz) # (inz.min(), inz.max()+1)
     Jtest = M.max(axis=2).max(axis=0)
     (jnz,) = np.nonzero(Jtest > 0)
-    slices[1] = (jnz.min(), jnz.max()+1)
+    slices[1] = minmax(jnz) # (jnz.min(), jnz.max()+1)
     Ktest = M.max(axis=1).max(axis=0)
     (knz,) = np.nonzero(Ktest > 0)
-    slices[2] = (knz.min(), knz.max()+1)
+    slices[2] = minmax(knz) # (knz.min(), knz.max()+1)
     return slices
 
 def slice3(M, s):
