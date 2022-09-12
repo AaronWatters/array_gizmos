@@ -9,19 +9,25 @@ from . import operations3d
 from H5Gizmos import Stack, Slider, Image, Shelf
 from . import colorizers
 
-def strideLabelsAndImage(labels, image, width=600, strideI=True):
+def adjusted_labels_and_image(labels, image, width=600, adjustment="reduce"):
     slicing = operations3d.positive_slicing(labels)
     slabels = operations3d.slice3(labels, slicing)
     simage = operations3d.slice3(image, slicing)
     tlabels = slabels
     timage = simage
-    if strideI:
-        [I, J, K] = simage.shape
-        m = min(J, K)
-        if I < m:
-            stride = int(m / I)
-            tlabels = slabels[:, ::stride, ::stride]
-            timage = simage[:, ::stride, ::stride]
+    if adjustment == "reduce":
+        tlabels = operations3d.reduced_shape(slabels)
+        timage = operations3d.reduced_shape(simage)
+    elif adjustment == "expand":
+        tlabels = operations3d.expanded_shape(slabels)
+        timage = operations3d.expanded_shape(simage)
+    elif adjustment is not None:
+        try:
+            size = int(adjustment)
+        except ValueError:
+            raise ValueError("adjustment should be reduce, expand, integer or None: " + rep(adjustment))
+        tlabels = operations3d.specific_shape(slabels, size)
+        timage = operations3d.specific_shape(simage, size)
     return LabelsAndImage(tlabels, timage, width=width)
 
 class LabelsAndImage:
