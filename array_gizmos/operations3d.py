@@ -34,6 +34,47 @@ def slice3(M, s):
     km, kM = s[2]
     return M[im:iM, jm:jM, km:kM]
 
+def reduced_shape(array):
+    "Make dimensions closer to equal by striding over larger dimensions."
+    shape = array.shape
+    m = min(*shape)
+    [sI, sJ, sK] = np.array(shape, dtype=np.int) // m
+    return array[::sI, ::sJ, ::sK]
+
+def expanded_shape(array):
+    "Make dimensions closer to equal by expanding smaller dimensions."
+    # xxx not really finished: too slow.
+    shape = array.shape
+    M = max(*shape)
+    (I, J, K) = shape
+    Is = M / I
+    if Is > 1:
+        expanded = np.zeros([M, J, K], dtype=array.dtype)
+        for i_m in range(M):
+            expanded[i_m] = array[int(i_m / Is)]
+    return expanded
+
+def specific_shape(array, size):
+    (I, J, K) = array.shape
+    r = size / I
+    adjusted = np.zeros((size, J, K), dtype=array.dtype)
+    for i in range(size):
+        i_r = int(i / r)
+        adjusted[i] = array[i_r]
+    array = adjusted
+    adjusted = np.zeros((size, size, K), dtype=array.dtype)
+    r = size / J
+    for i in range(size):
+        i_r = int(i / r)
+        adjusted[:, i] = array[:, i_r]
+    array = adjusted
+    r = size / K
+    adjusted = np.zeros((size, size, size), dtype=array.dtype)
+    for i in range(size):
+        i_r = int(i / r)
+        adjusted[:, :, i] = array[:, :, i_r]
+    return adjusted
+
 def shearKJ(array, radians):
     "Shear the 3d array at the middle by radians in the JK dimensions."
     # xxx might be generalizable to 2d etc if reworked for IJ
