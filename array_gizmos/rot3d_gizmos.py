@@ -25,7 +25,7 @@ def adjusted_labels_and_image(labels, image, width=600, adjustment="reduce"):
         try:
             size = int(adjustment)
         except ValueError:
-            raise ValueError("adjustment should be reduce, expand, integer or None: " + rep(adjustment))
+            raise ValueError("adjustment should be reduce, expand, integer or None: " + repr(adjustment))
         tlabels = operations3d.specific_shape(slabels, size)
         timage = operations3d.specific_shape(simage, size)
     return LabelsAndImage(tlabels, timage, width=width)
