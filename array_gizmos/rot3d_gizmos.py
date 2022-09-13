@@ -236,7 +236,8 @@ class AdjustableLabelsAndImage:
         proj_labels = operations3d.extrude0(rotated_labels)
         scale_img = colorizers.scale256(proj_img)
         color_labels = colorizers.colorize_array(proj_labels)
-        self.image_display.change_array(scale_img)
+        color_image = colorizers.pseudo_colorize(scale_img)
+        self.image_display.change_array(color_image)
         self.labels_display.change_array(color_labels)
 
     def reset_click(self, *ignored):
