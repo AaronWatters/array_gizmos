@@ -237,5 +237,8 @@ class AdjustableLabelsAndImage:
         self.labels_display.change_array(color_labels)
 
     def reset_click(self, *ignored):
-        not implemented
+        self.I_slider.reset()
+        self.J_slider.reset()
+        self.K_slider.reset()
+        self.resolution_slider.reset()
         
