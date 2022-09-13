@@ -21,5 +21,8 @@ setup(
         "numpy",
         "H5Gizmos",
         ],
+    scripts = [
+        "bin/compare_npz_labels",
+    ],
     python_requires=">=3.6",
 )

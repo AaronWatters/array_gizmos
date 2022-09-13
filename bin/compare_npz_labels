@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+usage = """
+
+USAGE:
+======
+
+% gif_gizmo INPUT_FILE.npz
+
+Compare image and labels volumes in NPZ file.
+The INPUT_FILE.npz should have keys "img" and "labels"
+mapped to an image volume and a label volume of the same shape.
+
+See ../notebooks/labels_and_image.npz for an example.
+"""
+
+import sys
+from array_gizmos import rot3d_gizmos
+from H5Gizmos import serve
+import numpy as np
+
+try:
+    assert len(sys.argv) == 2, "Please provide only one filename"
+    npz_path = sys.argv[1]
+    
+    D = np.load(npz_path)
+
+    image = D["img"]
+    labels = D["labels"]
+    assert image.shape == labels.shape, "Shape mismatch: " + repr((image.shape, labels.shape))
+    ALI = rot3d_gizmos.AdjustableLabelsAndImage(labels, image, title=npz_path)
+
+    async def task():
+        await ALI.gizmo()
+
+    serve(task())
+
+except Exception as e:
+    print ("Exception: ", e)
+    print (usage)
+    raise
+
