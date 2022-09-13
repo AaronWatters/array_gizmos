@@ -109,6 +109,9 @@ class AdjustableLabelsAndImage:
         # force min to be 100 or less
         min_res = min(100, min_res)
         max_res = max(*shape)
+        # but at least 50 if possible
+        if max_res > 50:
+            min_res = max(50, min_res)
         self.default_resolution = min_res
         width = self.width
         reset_button = Button("Reset", on_click=self.reset_click)
