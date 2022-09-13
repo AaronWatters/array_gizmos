@@ -88,8 +88,9 @@ class LabelsAndImage:
         
 class AdjustableLabelsAndImage:
 
-    def __init__(self, labels, image, width=600):
+    def __init__(self, labels, image, width=600, title="Image and Labels"):
         assert labels.shape == image.shape, "shapes don't match: " + repr([labels.shape, image.shape])
+        self.title = title
         self.labels = labels
         self.image = image
         self.width = width
@@ -105,6 +106,8 @@ class AdjustableLabelsAndImage:
         self.info_area = Text("Image and Labels")
         shape = self.slabels.shape
         min_res = min(*shape)
+        # force min to be 100 or less
+        min_res = min(100, min_res)
         max_res = max(*shape)
         self.default_resolution = min_res
         width = self.width
@@ -176,6 +179,7 @@ class AdjustableLabelsAndImage:
             self.labels_display,
         ])
         dash = Stack([ 
+            self.title,
             self.info_area,
             top_controls,
             ["theta", self.theta_slider],
@@ -185,6 +189,7 @@ class AdjustableLabelsAndImage:
             ["J", self.J_slider],
             ["K", self.K_slider],
         ])
+        dash.css({"background-color": "#ddd"})
         await dash.link()
         self.setup_images()
 
