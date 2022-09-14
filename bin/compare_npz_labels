@@ -5,7 +5,7 @@ usage = """
 USAGE:
 ======
 
-% gif_gizmo INPUT_FILE.npz
+% compare_npz_labels INPUT_FILE.npz
 
 Compare image and labels volumes in NPZ file.
 The INPUT_FILE.npz should have keys "img" and "labels"
