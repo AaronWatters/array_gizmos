@@ -23,3 +23,13 @@ Then install this module in development mode:
 % cd ..
 ```
 
+<img src="comparison_viz.png" width="500"/>
+
+# How to use the labelled microscropy comparison visualization
+
+This module includes a visualization implementation for comparing
+labelled structure volumes with microscopy volumes.  The tool is designed
+for use with the 
+<a href="https://github.com/flatironinstitute/blastoSPIM_web">blastoSPIM project data sets</a>.
+
+
