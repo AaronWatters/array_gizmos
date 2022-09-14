@@ -39,7 +39,7 @@ notebooks/comparing labels and microscopy images.ipynb
 
 The
 <a href="https://github.com/AaronWatters/array_gizmos/blob/main/bin/compare_npz_labels">
-compare_npz_labels
+bin/compare_npz_labels
 </a> script demonstrates the how load volume arrays into the viewer and start the viewer in a stand alone application.
 
 The 
