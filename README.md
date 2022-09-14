@@ -34,7 +34,7 @@ for use with the
 
 The
 <a href="https://github.com/AaronWatters/array_gizmos/blob/main/notebooks/comparing%20labels%20and%20microscopy%20images.ipynb">
-comparing labels and microscopy images.ipynb
+notebooks/comparing labels and microscopy images.ipynb
 </a> notebook demonstrates how to load volume arrays into the viewer and start the viewer in a notebook,
 
 The
@@ -44,7 +44,7 @@ compare_npz_labels
 
 The 
 <a href="https://github.com/AaronWatters/array_gizmos/blob/main/bin/compare_npz_labels">
-compare_npz_labels
+bin/compare_npz_labels
 </a> script is installed  with this module as a command line script which will open and display
 data from an numeric Python NPZ file formatted like the
 <a href="https://github.com/flatironinstitute/blastoSPIM_web">blastoSPIM project data sets</a>.
