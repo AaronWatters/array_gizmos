@@ -2,6 +2,7 @@
 Gizmo visualizations for 3d array rotations.
 """
 
+from tkinter import N
 from turtle import color
 import numpy as np
 import math
@@ -89,14 +90,16 @@ class LabelsAndImage:
 class AdjustableLabelsAndImage:
 
     def __init__(self, labels, image, width=600, title="Image and Labels"):
-        assert labels.shape == image.shape, "shapes don't match: " + repr([labels.shape, image.shape])
+        if image is not None:
+            assert labels.shape == image.shape, "shapes don't match: " + repr([labels.shape, image.shape])
         self.title = title
         self.labels = labels
         self.image = image
         self.width = width
         slicing = operations3d.positive_slicing(labels)
         self.slabels = operations3d.slice3(labels, slicing)
-        self.simage = operations3d.slice3(image, slicing)
+        if image is not None:
+            self.simage = operations3d.slice3(image, slicing)
         self.multi_resolution = False
 
     def info(self, msg):
@@ -175,12 +178,15 @@ class AdjustableLabelsAndImage:
             step=0.02, 
             on_change=self.draw_image)
         self.phi_slider.resize(width=width)
-        self.image_display = Image(height=width, width=width)
         self.labels_display = Image(height=width, width=width)
-        displays = Shelf([
-            self.image_display,
-            self.labels_display,
-        ])
+        if self.image is None:
+            displays = self.labels_display
+        else:
+            self.image_display = Image(height=width, width=width)
+            displays = Shelf([
+                self.image_display,
+                self.labels_display,
+            ])
         dash = Stack([ 
             self.title,
             self.info_area,
@@ -217,7 +223,8 @@ class AdjustableLabelsAndImage:
         size = self.get_resolution()
         self.info("... Setting image resolution: " + repr(size))
         self.labels_buffer = self.chunk(self.slabels)
-        self.image_buffer = self.chunk(self.simage)
+        if self.image is not None:
+            self.image_buffer = self.chunk(self.simage)
         #self.tlabels = operations3d.specific_shape(self.slabels, size)
         #self.timage = operations3d.specific_shape(self.simage, size)
         #self.image_buffer = operations3d.rotation_buffer(self.timage)
@@ -229,15 +236,19 @@ class AdjustableLabelsAndImage:
         theta = self.theta_slider.value
         phi = self.phi_slider.value
         self.info("rotating: " + repr([theta, phi]))
-        rotated_img = operations3d.rotate3d(self.image_buffer, theta, phi)
+        if self.image is not None:
+            rotated_img = operations3d.rotate3d(self.image_buffer, theta, phi)
         rotated_labels = operations3d.rotate3d(self.labels_buffer, theta, phi)
-        self.info("projection: " + repr(self.image_buffer.shape))
-        proj_img = rotated_img.max(axis=0)
+        self.info("projection: " + repr(self.labels_buffer.shape))
+        if self.image is not None:
+            proj_img = rotated_img.max(axis=0)
         proj_labels = operations3d.extrude0(rotated_labels)
-        scale_img = colorizers.scale256(proj_img)
+        if self.image is not None:
+            scale_img = colorizers.scale256(proj_img)
         color_labels = colorizers.colorize_array(proj_labels)
-        color_image = colorizers.pseudo_colorize(scale_img)
-        self.image_display.change_array(color_image)
+        if self.image is not None:
+            color_image = colorizers.pseudo_colorize(scale_img)
+            self.image_display.change_array(color_image)
         self.labels_display.change_array(color_labels)
 
     def reset_click(self, *ignored):
