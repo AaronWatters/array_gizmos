@@ -69,3 +69,38 @@ pseudo_color_mapping = np.array([interpolate255(i) for i in range(256)]).astype(
 
 def pseudo_colorize(a):
     return colorize_array(a, pseudo_color_mapping)
+
+
+def enhance_contrast(img, cutoff=0.1):
+    (unique, count) = np.unique(img, return_counts=True)
+    size = img.size
+    def breakpoint(delta):
+        stop = delta * size
+        total = 0
+        for (i, c) in enumerate(count):
+            total += c
+            if total > stop:
+                return i
+        return len(count)
+    low_index = breakpoint(cutoff)
+    high_index = breakpoint(1.0 - cutoff)
+    length = max(unique) + 1
+    mapping = np.zeros((length,), dtype=np.ubyte)
+    low = unique[low_index]
+    high = unique[high_index]
+    # print("low", low, "high", high)
+    if low < high:
+        delta = 255.0 / (high - low)
+    else:
+        delta = 255.0
+    for i in range(length):
+        if i < low:
+            v = 0
+        elif i > high:
+            v = 255
+        else:
+            v = int(delta * (i - low))
+        mapping[i] = v
+    result = mapping[img]
+    return result
+
