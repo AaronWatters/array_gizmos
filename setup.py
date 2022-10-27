@@ -23,6 +23,7 @@ setup(
         ],
     scripts = [
         "bin/compare_npz_labels",
+        "bin/view_volume_layers",
     ],
     python_requires=">=3.6",
 )
