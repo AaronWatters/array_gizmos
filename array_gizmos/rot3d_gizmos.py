@@ -2,10 +2,7 @@
 Gizmo visualizations for 3d array rotations.
 """
 
-from tkinter import N
-from turtle import color
 import numpy as np
-import math
 from . import operations3d
 from H5Gizmos import Stack, Slider, Image, Shelf, Button, Text, RangeSlider
 from . import colorizers
