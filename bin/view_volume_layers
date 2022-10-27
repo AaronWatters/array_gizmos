@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+usage = """
+
+View a 3d volume array by (projected) layers.
+
+USAGE:
+======
+
+View layers with default sizing:
+
+% view_volume_layers FILENAME
+
+Where filename is *.tif or *.tiff or *.klb.
+
+View layers with specified sizing of 987
+
+% view_volume_layers FILENAME 987
+
+View layers using the array sizing
+
+% view_volume_layers FILENAME none
+"""
+
+from array_gizmos.layer_gizmo import ImageViewer
+import sys
+from PIL import Image
+from numpy import asarray
+from H5Gizmos import serve
+from mouse_embryo_labeller import tools
+
+
+DEFAULT_WIDTH = 600
+
+args = sys.argv[1:]
+nargs = len(args)
+
+try:
+    wd = None
+    width = DEFAULT_WIDTH
+
+    if nargs == 1:
+        [filename] = args
+    elif nargs == 2:
+        [filename, wd] = args
+        if wd == "none":
+            width = None
+        else:
+            width = int(wd)
+    else:
+        assert nargs>0 and nargs<=2, "bad args: " + repr(args)
+
+    if filename.endswith(".tif") or filename.endswith(".tiff"):
+        data = tools.load_tiff_array(filename)
+    elif filename.endswith(".klb"):
+        import pyklb
+        data = pyklb.readfull(filename)
+    else:
+        image = Image.open(filename)
+        data = asarray(image)
+
+    viewer = ImageViewer(data, filename)
+
+    async def task():
+        await viewer.gizmo(width)
+
+    serve(task())
+except Exception:
+    print(usage)
+    raise
