@@ -80,6 +80,7 @@ class ImageViewer:
             options,
             self.image_display,
         ])
+        dash.css({"background-color": "#ddd"})
         await dash.link()
         self.draw_image()
 
