@@ -15,15 +15,37 @@ def colorize_array(a, color_mapping_array=None):
     colorized_array = colors.reshape(shape + (3,))
     return colorized_array
 
-def scale256(img, epsilon=1e-11):
+def scale256(img, epsilon=1e-11, minimum=None):
     img = np.array(img, dtype=np.float)
     m = img.min()
+    if minimum is not None:
+        m = minimum
     M = img.max()
     D = M - m 
     if D < epsilon:
         D = epsilon
     scaled = (255.0 * (img - m)) / D
     return scaled.astype(np.ubyte)
+
+def to_rgb(arr, scaled=True):
+    "Make into a 3 color array if needed and rescale if requested."
+    s = arr.shape
+    ls = len(s)
+    if ls > 2:
+        assert ls == 3, "Array should be 2d grey or 2d rgb: " + repr(l)
+        assert s[2] == 3, "Function expects 3 colors exactly: " + repr(l)
+        if scaled:
+            arr = scale256(arr)
+        return arr
+    assert (ls == 2), "Image array should be 2d: " + repr(s)
+    s3 = s + (3,)
+    s1 = s + (1,)
+    if scaled:
+        arr = scale256(arr)
+    arr1 = arr.reshape(s1)
+    result = np.zeros(s3, dtype=arr1.dtype)
+    result[:] = arr1
+    return result
 
 # pseudocolor support
 h = 255
