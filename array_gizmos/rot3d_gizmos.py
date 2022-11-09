@@ -184,6 +184,7 @@ class AdjustableLabelsAndImage:
                 self.image_display,
                 self.labels_display,
             ])
+        self.slicing_info = Text("Slicing: none")
         dash = Stack([ 
             self.title,
             self.info_area,
@@ -194,6 +195,7 @@ class AdjustableLabelsAndImage:
             ["I", self.I_slider],
             ["J", self.J_slider],
             ["K", self.K_slider],
+            self.slicing_info,
         ])
         dash.css({"background-color": "#ddd"})
         await dash.link()
@@ -210,6 +212,7 @@ class AdjustableLabelsAndImage:
         [imin, imax] = self.I_slider.values
         [jmin, jmax] = self.J_slider.values
         [kmin, kmax] = self.K_slider.values
+        self.slicing_info.html(repr( ([imin, imax], [jmin, jmax], [kmin, kmax])))
         segment = np.zeros(array.shape, dtype=array.dtype)
         segment[imin:imax, jmin:jmax, kmin:kmax] = array[imin:imax, jmin:jmax, kmin:kmax]
         truncated = operations3d.specific_shape(segment, size)
