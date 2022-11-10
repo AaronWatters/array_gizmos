@@ -6,6 +6,7 @@ import numpy as np
 from . import operations3d
 from H5Gizmos import Stack, Slider, Image, Shelf, Button, Text, RangeSlider
 from . import colorizers
+from . import color_list
 
 def adjusted_labels_and_image(labels, image, width=600, adjustment="reduce"):
     slicing = operations3d.positive_slicing(labels)
@@ -230,6 +231,8 @@ class AdjustableLabelsAndImage:
         #self.image_buffer = operations3d.rotation_buffer(self.timage)
         #self.labels_buffer = operations3d.rotation_buffer(self.tlabels)
         #self.info("drawing images at resolution: " + repr(size))
+        self.labels_display.on_pixel(self.pixel_callback)
+        self.selected_label = None
         self.draw_image()
 
     def draw_image(self, *ignored):
@@ -243,13 +246,35 @@ class AdjustableLabelsAndImage:
         if self.image is not None:
             proj_img = rotated_img.max(axis=0)
         proj_labels = operations3d.extrude0(rotated_labels)
+        self.proj_labels = proj_labels
         if self.image is not None:
             scale_img = colorizers.scale256(proj_img)
         color_labels = colorizers.colorize_array(proj_labels)
+        self.proj_labels = proj_labels
         if self.image is not None:
-            color_image = colorizers.pseudo_colorize(scale_img)
+            #color_image = colorizers.pseudo_colorize(scale_img)
+            color_image = colorizers.to_rgb(scale_img, scaled=False)
+            label = self.selected_label
+            if label:
+                boundary = colorizers.boundary_image(label, proj_labels)
+                color = color_list.indexed_color(label-1)
+                white = [255,255,255]
+                color_image = colorizers.overlay_color(color_image, boundary, color)
+                color_labels = colorizers.overlay_color(color_labels, boundary, white)
+                self.info("highlighting: " + repr(label))
+            # xxx mark selected label...
             self.image_display.change_array(color_image)
         self.labels_display.change_array(color_labels)
+
+    def pixel_callback(self, event):
+        row = event["pixel_row"]
+        column = event["pixel_column"]
+        labels = self.proj_labels
+        label = labels[row, column]
+        self.info("clicked label: " + repr(label))
+        if label:
+            self.selected_label = label
+            self.draw_image()
 
     def reset_click(self, *ignored):
         self.I_slider.reset()

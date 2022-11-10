@@ -4,6 +4,7 @@ Helpers for colorizing array displays.
 
 from . import color_list
 import numpy as np
+from scipy import signal
 
 def colorize_array(a, color_mapping_array=None):
     if color_mapping_array is None:
@@ -26,6 +27,24 @@ def scale256(img, epsilon=1e-11, minimum=None):
         D = epsilon
     scaled = (255.0 * (img - m)) / D
     return scaled.astype(np.ubyte)
+
+edge_array = np.array([
+    [1,1,1],
+    [1,-8,1],
+    [1,1,1],
+])
+
+def boundary_image(labels, target_label, edge_array=edge_array):
+    mask = (labels == target_label).astype(np.ubyte)
+    test = signal.convolve2d(mask, edge_array, boundary='symm', mode='same')
+    return (test!=0).astype(np.ubyte)
+
+def overlay_color(img, mask, color):
+    mask3 = np.zeros(mask.shape + (3,), dtype=np.ubyte)
+    mask3[:] = mask.reshape(mask.shape + (1,))
+    color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
+    result = np.choose(mask3, [img, color])
+    return result
 
 def to_rgb(arr, scaled=True):
     "Make into a 3 color array if needed and rescale if requested."
