@@ -39,10 +39,37 @@ def boundary_image(labels, target_label, edge_array=edge_array):
     test = signal.convolve2d(mask, edge_array, boundary='symm', mode='same')
     return (test!=0).astype(np.ubyte)
 
-def overlay_color(img, mask, color):
+def overlay_color(img, mask, color, center=False):
+    img2d = img.shape[:2]
+    mshape = mask.shape
+    if center and img2d != mshape:
+        # reshape the mask centered in the img2d shape
+        cmask = np.zeros(img2d, dtype=mask.dtype)
+        (imgI, imgJ) = img2d
+        (maskI, maskJ) = mshape
+        def centered_indices(dest, source):
+            dstart = sstart = 0
+            dend = dest
+            send = source
+            if source <= dest:
+                shift = int((dest - source) / 2)
+                dstart = shift
+                dend = shift + source
+            else:
+                assert source > dest
+                skip = int((source - dest) / 2)
+                sstart = skip
+                send = skip + dest
+            return (dstart, dend, sstart, send)
+        (cIstart, cIend, mIstart, mIend) = centered_indices(imgI, maskI)
+        (cJstart, cJend, mJstart, mJend) = centered_indices(imgJ, maskJ)
+        cmask[cIstart: cIend, cJstart: cJend] = mask[mIstart: mIend, mJstart: mJend]
+        mask = cmask
+    assert mask.shape == img2d, repr([mask.shape, img2d])
     mask3 = np.zeros(mask.shape + (3,), dtype=np.ubyte)
     mask3[:] = mask.reshape(mask.shape + (1,))
     color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
+    print("shapes mask", mask3.shape, "color", color.shape, "img", img.shape)
     result = np.choose(mask3, [img, color])
     return result
 
