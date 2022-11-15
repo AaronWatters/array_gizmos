@@ -62,6 +62,7 @@ def expanded_shape(array):
     return expanded
 
 def specific_shape(array, size):
+    "Force all dimensions to equal size by repeating or subsampling values."
     (I, J, K) = array.shape
     r = size / I
     adjusted = np.zeros((size, J, K), dtype=array.dtype)
