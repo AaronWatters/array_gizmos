@@ -72,7 +72,6 @@ def overlay_color(img, mask, color, center=False):
     mask3 = np.zeros(mask.shape + (3,), dtype=np.ubyte)
     mask3[:] = mask.reshape(mask.shape + (1,))
     color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
-    print("shapes mask", mask3.shape, "color", color.shape, "img", img.shape)
     result = np.choose(mask3, [img, color])
     return result
 
