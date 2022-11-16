@@ -17,6 +17,9 @@ def colorize_array(a, color_mapping_array=None):
     return colorized_array
 
 def scale256(img, epsilon=1e-11, minimum=None):
+    return scaleN(img, epsilon=epsilon, minimum=minimum, to_max=255.0, dtype=np.ubyte)
+
+def scaleN(img, epsilon=1e-11, minimum=None, to_max=10000.0, dtype=np.int):
     img = np.array(img, dtype=np.float)
     m = img.min()
     if minimum is not None:
@@ -25,8 +28,8 @@ def scale256(img, epsilon=1e-11, minimum=None):
     D = M - m 
     if D < epsilon:
         D = epsilon
-    scaled = (255.0 * (img - m)) / D
-    return scaled.astype(np.ubyte)
+    scaled = (to_max * (img - m)) / D
+    return scaled.astype(dtype)
 
 edge_array = np.array([
     [1,1,1],
@@ -139,7 +142,10 @@ def pseudo_colorize(a):
     return colorize_array(a, pseudo_color_mapping)
 
 
-def enhance_contrast(img, cutoff=0.1):
+def enhance_contrast(img, cutoff=0.1, int_max=10000):
+    if not np.issubdtype(img.dtype, np.integer):
+        # convert to integer type
+        img = scaleN(img, to_max=int_max)
     (unique, count) = np.unique(img, return_counts=True)
     size = img.size
     def breakpoint(delta):
