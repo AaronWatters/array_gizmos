@@ -193,6 +193,8 @@ def rotateKJ(array, theta):
 
 def rotateABC(array, radians, A=0, B=1, C=2):
     "Apply KJ rotate to swapped dimensions, and swap back after."
+    if radians == 0:
+        return array # micro optimization.
     swap = swapABC(array, A, B, C)
     rotate = rotateKJ(swap, radians)
     [iA, iB, iC] = invertABC(A, B, C)
@@ -208,11 +210,12 @@ def extrude0(labels_array):
         #volume[i] = extruded
     return extruded
 
-def rotate3d(array, theta, phi):
+def rotate3d(array, theta, phi, gamma=0):
     "Generalized rotation: rotate by theta in KJ and phi in IK."
-    R1 = rotateKJ(array, theta)
-    R2 = rotateABC(R1, phi, 2, 0, 1)
-    return R2  
+    R1 = rotateKJ(array, theta) # KJ rotation
+    R2 = rotateABC(R1, phi, 2, 0, 1)  # IJ rotation
+    R3 = rotateABC(R2, gamma, 1, 2, 0)  # IK rotation
+    return R3
 
 def rotation_buffer(arr3d):
     "Embed array in another array large enough to support rotations."
