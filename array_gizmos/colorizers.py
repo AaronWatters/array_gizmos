@@ -42,7 +42,41 @@ def boundary_image(labels, target_label, edge_array=edge_array):
     test = signal.convolve2d(mask, edge_array, boundary='symm', mode='same')
     return (test!=0).astype(np.ubyte)
 
+def center_shapes(A1, A2):
+    """
+    If A1 and A2 shapes don't match in 2d then embed into larger arrays
+    """
+    s1 = A1.shape[:2]
+    s2 = A2.shape[:2]
+    if s1 != s2:
+        sM = (M1, M2) = tuple(np.maximum(s1, s2))
+        def fit(A, M1, M2):
+            (m1, m2) = A.shape[:2]
+            Aout = np.zeros( (M1, M2) + A.shape[2:], dtype=A.dtype)
+            shift1 = int((M1 - m1)/2)
+            shift2 = int((M2 - m2)/2)
+            Aout[shift1:shift1+m1, shift2:shift2+m2] = A
+            return Aout
+        if sM != s1:
+            A1 = fit(A1, M1, M2)
+        if sM != s2:
+            A2 = fit(A2, M1, M2)
+    return (A1, A2)
+
+
 def overlay_color(img, mask, color, center=False):
+    img = to_rgb(img, scaled=False)
+    if center:
+        (img, mask) = center_shapes(img, mask)
+        if hasattr(color, "shape"):
+            (img, color) = center_shapes(img, color)
+    mask3 = np.zeros(mask.shape + (3,), dtype=np.ubyte)
+    mask3[:] = mask.reshape(mask.shape + (1,))
+    result = np.choose(mask3, [img, color])
+    return result
+
+def overlay_color_delete(img, mask, color, center=False):
+    img = to_rgb(img, scaled=False)
     img2d = img.shape[:2]
     mshape = mask.shape
     if center and img2d != mshape:
@@ -71,7 +105,11 @@ def overlay_color(img, mask, color, center=False):
     assert mask.shape == img2d, repr([mask.shape, img2d])
     mask3 = np.zeros(mask.shape + (3,), dtype=np.ubyte)
     mask3[:] = mask.reshape(mask.shape + (1,))
-    color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
+    #color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
+    if hasattr(color, "shape"):
+        assert color.shape == img.shape, "color shape doesn't match img: " +repr([color.shape, img.shape])
+    else:
+        color = np.array(color, dtype=np.ubyte).reshape((1,1,3))
     result = np.choose(mask3, [img, color])
     return result
 
@@ -80,8 +118,8 @@ def to_rgb(arr, scaled=True):
     s = arr.shape
     ls = len(s)
     if ls > 2:
-        assert ls == 3, "Array should be 2d grey or 2d rgb: " + repr(l)
-        assert s[2] == 3, "Function expects 3 colors exactly: " + repr(l)
+        assert ls == 3, "Array should be 2d grey or 2d rgb: " + repr(s)
+        assert s[2] == 3, "Function expects 3 colors exactly: " + repr(s)
         if scaled:
             arr = scale256(arr)
         return arr
@@ -139,7 +177,6 @@ pseudo_color_mapping = np.array([interpolate255(i) for i in range(256)]).astype(
 
 def pseudo_colorize(a):
     return colorize_array(a, pseudo_color_mapping)
-
 
 def enhance_contrast(img, cutoff=0.1, int_max=10000):
     if not np.issubdtype(img.dtype, np.integer):
