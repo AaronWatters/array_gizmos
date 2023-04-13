@@ -62,26 +62,48 @@ def expanded_shape(array):
     return expanded
 
 def specific_shape(array, size):
-    "Force all dimensions to equal size by repeating or subsampling values."
+    "Force all dimensions of a 3d array to equal size by repeating or subsampling values."
+    return resample(array, [size, size, size])
+
+def resample(array, sizes):
     (I, J, K) = array.shape
+    size = sizes[0]
     r = size / I
     adjusted = np.zeros((size, J, K), dtype=array.dtype)
     for i in range(size):
         i_r = int(i / r)
         adjusted[i] = array[i_r]
+    size = sizes[1]
     array = adjusted
-    adjusted = np.zeros((size, size, K), dtype=array.dtype)
+    adjusted = np.zeros((sizes[0], size, K), dtype=array.dtype)
     r = size / J
     for i in range(size):
         i_r = int(i / r)
         adjusted[:, i] = array[:, i_r]
+    size = sizes[2]
     array = adjusted
     r = size / K
-    adjusted = np.zeros((size, size, size), dtype=array.dtype)
+    adjusted = np.zeros((sizes[0], sizes[1], size), dtype=array.dtype)
     for i in range(size):
         i_r = int(i / r)
         adjusted[:, :, i] = array[:, :, i_r]
     return adjusted
+
+def rectify_scaling(I, dI, dside):
+    return int(I * dI / dside)
+
+def rectify(array, dI, dJ, dK, dside):
+    """
+    resample array with voxel dimensions dI x dJ x dK
+    producing resampled array with voxel dimensions dside x dside x dside.
+    """
+    (I, J, K) = array.shape
+    new_shape = (
+        rectify_scaling(I, dI, dside),
+        rectify_scaling(J, dJ, dside),
+        rectify_scaling(K, dK, dside))
+    return resample(array, new_shape)
+
 
 def shearKJ(array, radians):
     "Shear the 3d array at the middle by radians in the JK dimensions."
