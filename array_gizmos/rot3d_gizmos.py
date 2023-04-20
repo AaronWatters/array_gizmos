@@ -288,3 +288,77 @@ class AdjustableLabelsAndImage:
         self.K_slider.reset()
         self.resolution_slider.reset()
         
+
+class OverlayedLabels:
+
+    def __init__(self, labels1, labels2, width=500, title="Overlayed labels.", ratio=0.05):
+        self.title = title
+        self.ratio = ratio
+        # we are only interested in zero/nonzero, not label detail
+        def nonzeros(arr):
+            return (arr > 0).astype(np.ubyte)
+        labels1 = nonzeros(labels1)  # ones where nonzero
+        labels2 = nonzeros(labels2) * 2 # 2s where nonzero
+        (labels1, labels2) = operations3d.expand_broadcastable(labels1, labels2)
+        assert labels1.shape == labels2.shape
+        self.labels1 = labels1
+        self.labels2 = labels2
+        self.width = width
+        slicing1 = operations3d.positive_slicing(labels1)
+        slicing2 = operations3d.positive_slicing(labels2)
+        slicing = operations3d.unify_slicing(slicing1, slicing2)
+        self.slabels1 = operations3d.slice3(labels1, slicing)
+        self.slabels2 = operations3d.slice3(labels2, slicing)
+        assert self.slabels1.shape == self.slabels2.shape
+        # for now conform to smallest dimension
+        #self.rlabels1 = operations3d.reduced_shape(self.slabels1)
+        #self.rlabels2 = operations3d.reduced_shape(self.slabels2)
+
+        target_shape = (200, 200, 200)
+        self.rlabels1 = operations3d.resample(self.slabels1, target_shape)
+        self.rlabels2 = operations3d.resample(self.slabels2, target_shape)
+
+        assert self.rlabels1.shape == self.rlabels2.shape
+        self.splabels1 = operations3d.speckle(self.rlabels1, ratio)
+        self.splabels2 = operations3d.speckle(self.rlabels2, ratio)
+        assert self.splabels1.shape == self.splabels2.shape
+        print ("Shape::", self.splabels1.shape)
+        self.colors = np.array([
+            [0,0,0],
+            [255,0,0],
+            [0,255,255]
+        ], dtype=np.ubyte)
+
+    async def gizmo(self):
+        width = self.width
+        self.info_area = Text("Overlayed segmentation")
+        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
+        self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
+        self.labels_display = Image(height=width, width=width)
+        dash = Stack([
+            self.info_area,
+            [
+                self.labels_display,
+                [self.rotations, self.rotations1]
+            ],
+        ])
+        dash.css({"background-color": "#ddd"})
+        await dash.link()
+        self.draw_image()
+
+    def draw_image(self, *ignored):
+        roll = self.rotations.roll
+        yaw = self.rotations.yaw
+        pitch = self.rotations.pitch
+        roll1 = self.rotations1.roll
+        yaw1 = self.rotations1.yaw
+        pitch1 = self.rotations1.pitch
+        rot_labels1 = operations3d.rotate3d(self.splabels1, roll, -pitch, -yaw)
+        rot_labels2 = operations3d.rotate3d(self.splabels2, roll, -pitch, -yaw)
+        assert rot_labels1.shape == rot_labels2.shape
+        rot_labels2 = operations3d.rotate3d(rot_labels2, roll1, -pitch1, -yaw1)
+        assert rot_labels1.shape == rot_labels2.shape
+        combined = np.where(rot_labels1, rot_labels1, rot_labels2)
+        projected = operations3d.extrude0(combined)
+        colored = colorizers.colorize_array(projected, self.colors)
+        self.labels_display.change_array(colored)
