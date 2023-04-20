@@ -45,8 +45,9 @@ def reduced_shape(array):
     "Make dimensions closer to equal by striding over larger dimensions."
     shape = array.shape
     m = min(*shape)
-    [sI, sJ, sK] = np.array(shape, dtype=np.int) // m
-    return array[::sI, ::sJ, ::sK]
+    #[sI, sJ, sK] = np.array(shape, dtype=np.int) // m
+    #return array[::sI, ::sJ, ::sK]
+    return resample(array, [m, m, m])
 
 def expanded_shape(array):
     "Make dimensions closer to equal by expanding smaller dimensions."
@@ -104,6 +105,26 @@ def rectify(array, dI, dJ, dK, dside):
         rectify_scaling(K, dK, dside))
     return resample(array, new_shape)
 
+
+def speckle(array, speckle_ratio=0.03):
+    """
+    Randomly select speckled subset of array nonzero elements.
+    """
+    assert speckle_ratio > 0 and speckle_ratio < 1, \
+        "bad speckle ratio: " + repr(speckle_ratio)
+    r = np.random.random(array.shape)
+    filter = (r < speckle_ratio)
+    return np.where(filter, array, 0)
+
+def expand_broadcastable(a1, a2):
+    "make a1 and a2 into bigger broadcastable arrays (hacky expedient, for now)"
+    bigger = tuple(np.maximum(a1.shape, a2.shape))
+    def force(a):
+        (I, J, K) = a.shape
+        result = np.zeros(bigger, dtype=a.dtype)
+        result[:I, :J, :K] = a
+        return result
+    return (force(a1), force(a2))
 
 def shearKJ(array, radians):
     "Shear the 3d array at the middle by radians in the JK dimensions."
