@@ -174,10 +174,16 @@ def rot90ABC(array, A=0, B=1, C=2):
 pi4 = np.pi / 4.0
 pi2 = np.pi / 2.0
 pi34 = np.pi * 3.0 / 4.0
+epsilon = 0.01
+
+def is_tiny(number):
+    return abs(number) < epsilon
 
 def rotateKJ45(array, theta):
     "Rotate array in JK dimensions by theta in range -45..45 degrees."
     #global sA, sB, sC  # DEBUG ONLY
+    if is_tiny(theta):
+        return array # micro optimization
     assert theta >= -pi4 and theta <= pi4, "theta not in [-pi/4..pi/4]" + repr([pi4, theta])
     alpha = - np.tan(0.5 * theta)
     beta = np.sin(theta)
@@ -189,6 +195,8 @@ def rotateKJ45(array, theta):
 def rotateKJ(array, theta):
     "Rotate array in JK dimensions by theta in range -180..180 degrees."
     # xxx could remove range restriction.
+    if is_tiny(theta):
+        return array # micro optimization
     assert -np.pi - 1 <= theta <= np.pi + 1, "theta not in range -pi..pi." + repr(theta)
     # note: rotations are fast because they only make views of the array (?)
     buffer = array
@@ -215,8 +223,8 @@ def rotateKJ(array, theta):
 
 def rotateABC(array, radians, A=0, B=1, C=2):
     "Apply KJ rotate to swapped dimensions, and swap back after."
-    if radians == 0:
-        return array # micro optimization.
+    if is_tiny(radians):
+        return array # micro optimization
     swap = swapABC(array, A, B, C)
     rotate = rotateKJ(swap, radians)
     [iA, iB, iC] = invertABC(A, B, C)
