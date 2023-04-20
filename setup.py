@@ -18,6 +18,7 @@ setup(
     author_email="awatters@flatironinstitute.org",
     url=url,
     install_requires=[
+        "jp_doodle",
         "numpy",
         "H5Gizmos",
         ],

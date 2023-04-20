@@ -7,6 +7,7 @@ from . import operations3d
 from H5Gizmos import Stack, Slider, Image, Shelf, Button, Text, RangeSlider
 from . import colorizers
 from . import color_list
+from jp_doodle import gz_aircraft_axes
 
 def adjusted_labels_and_image(labels, image, width=600, adjustment="reduce"):
     slicing = operations3d.positive_slicing(labels)
@@ -129,14 +130,15 @@ class AdjustableLabelsAndImage:
             self.resolution_slider.resize(width=width)
             top_controls = ["resolution", self.resolution_slider, reset_button]
         limit = np.pi
-        self.theta_slider = Slider(
+        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
+        '''self.theta_slider = Slider(
             title="theta", 
             value=0, 
             minimum=-limit, 
             maximum=+limit, 
             step=0.02, 
             on_change=self.draw_image)
-        self.theta_slider.resize(width=width)
+        self.theta_slider.resize(width=width)'''
         [I, J, K] = shape
         self.I_slider = RangeSlider(
             minimum=0,
@@ -168,14 +170,14 @@ class AdjustableLabelsAndImage:
             on_change=self.setup_images,
         )
         self.K_slider.resize(width=width)
-        self.phi_slider = Slider(
+        '''self.phi_slider = Slider(
             title="theta", 
             value=0, 
             minimum=-limit, 
             maximum=+limit, 
             step=0.02, 
             on_change=self.draw_image)
-        self.phi_slider.resize(width=width)
+        self.phi_slider.resize(width=width)'''
         self.labels_display = Image(height=width, width=width)
         if self.image is None:
             displays = self.labels_display
@@ -184,14 +186,15 @@ class AdjustableLabelsAndImage:
             displays = Shelf([
                 self.image_display,
                 self.labels_display,
+                self.rotations,
             ])
         self.slicing_info = Text("Slicing: none")
         dash = Stack([ 
             self.title,
             self.info_area,
             top_controls,
-            ["theta", self.theta_slider],
-            ["phi", self.phi_slider],
+            #["theta", self.theta_slider],
+            #["phi", self.phi_slider],
             displays,
             ["I", self.I_slider],
             ["J", self.J_slider],
@@ -236,12 +239,15 @@ class AdjustableLabelsAndImage:
         self.draw_image()
 
     def draw_image(self, *ignored):
-        theta = self.theta_slider.value
-        phi = self.phi_slider.value
-        self.info("rotating: " + repr([theta, phi]))
+        #theta = self.theta_slider.value
+        #phi = self.phi_slider.value
+        roll = self.rotations.roll
+        yaw = self.rotations.yaw
+        pitch = self.rotations.pitch
+        self.info("rotating: " + repr([roll, pitch, yaw]))
         if self.image is not None:
-            rotated_img = operations3d.rotate3d(self.image_buffer, theta, phi)
-        rotated_labels = operations3d.rotate3d(self.labels_buffer, theta, phi)
+            rotated_img = operations3d.rotate3d(self.image_buffer, roll, -pitch, -yaw)
+        rotated_labels = operations3d.rotate3d(self.labels_buffer, roll, -pitch, -yaw)
         self.info("projection: " + repr(self.labels_buffer.shape))
         if self.image is not None:
             proj_img = rotated_img.max(axis=0)
