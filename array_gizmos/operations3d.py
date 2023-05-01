@@ -110,6 +110,8 @@ def speckle(array, speckle_ratio=0.03):
     """
     Randomly select speckled subset of array nonzero elements.
     """
+    if speckle_ratio == 1:
+        return array.copy()
     assert speckle_ratio > 0 and speckle_ratio < 1, \
         "bad speckle ratio: " + repr(speckle_ratio)
     r = np.random.random(array.shape)
