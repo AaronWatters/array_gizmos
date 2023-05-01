@@ -4,7 +4,7 @@ Gizmo visualizations for 3d array rotations.
 
 import numpy as np
 from . import operations3d
-from H5Gizmos import Stack, Slider, Image, Shelf, Button, Text, RangeSlider
+from H5Gizmos import Stack, Slider, Image, Shelf, Button, Text, RangeSlider, DropDownSelect
 from . import colorizers
 from . import color_list
 from jp_doodle import gz_aircraft_axes
@@ -291,9 +291,10 @@ class AdjustableLabelsAndImage:
 
 class OverlayedLabels:
 
-    def __init__(self, labels1, labels2, width=500, title="Overlayed labels.", ratio=0.05):
+    def __init__(self, labels1, labels2, width=500, title="Overlayed labels.", ratio=0.05, resolution=200):
         self.title = title
         self.ratio = ratio
+        self.resolution = resolution
         # we are only interested in zero/nonzero, not label detail
         def nonzeros(arr):
             return (arr > 0).astype(np.ubyte)
@@ -314,7 +315,7 @@ class OverlayedLabels:
         #self.rlabels1 = operations3d.reduced_shape(self.slabels1)
         #self.rlabels2 = operations3d.reduced_shape(self.slabels2)
 
-        target_shape = (200, 200, 200)
+        '''target_shape = (resolution, resolution, resolution)
         self.rlabels1 = operations3d.resample(self.slabels1, target_shape)
         self.rlabels2 = operations3d.resample(self.slabels2, target_shape)
 
@@ -322,28 +323,60 @@ class OverlayedLabels:
         self.splabels1 = operations3d.speckle(self.rlabels1, ratio)
         self.splabels2 = operations3d.speckle(self.rlabels2, ratio)
         assert self.splabels1.shape == self.splabels2.shape
-        print ("Shape::", self.splabels1.shape)
+        print ("Shape::", self.splabels1.shape)'''
+        self.sample_arrays()
         self.colors = np.array([
             [0,0,0],
             [255,0,0],
             [0,255,255]
         ], dtype=np.ubyte)
 
+    def sample_arrays(self):
+        resolution = self.resolution
+        ratio = self.ratio
+        target_shape = (resolution, resolution, resolution)
+        self.rlabels1 = operations3d.resample(self.slabels1, target_shape)
+        self.rlabels2 = operations3d.resample(self.slabels2, target_shape)
+        assert self.rlabels1.shape == self.rlabels2.shape
+        self.splabels1 = operations3d.speckle(self.rlabels1, ratio)
+        self.splabels2 = operations3d.speckle(self.rlabels2, ratio)
+        assert self.splabels1.shape == self.splabels2.shape
+        print ("Shape::", self.splabels1.shape)
+
     async def gizmo(self):
+        ratios = "1 0.5 0.1 0.05 0.02 0.01".split()
+        resolutions = "50 100 200 250 300 350 400".split()
+        self.select_ratio = DropDownSelect(ratios, selected_value="0.05", on_click=self.dropdown_callback,)
+        self.select_ratio.resize(width=100)
+        self.select_resolution = DropDownSelect(resolutions, selected_value="200", on_click=self.dropdown_callback,)
+        self.select_resolution.resize(width=80)
         width = self.width
         self.info_area = Text("Overlayed segmentation")
-        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
-        self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
+        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, options=dict(width=100))
+        self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, )
         self.labels_display = Image(height=width, width=width)
         dash = Stack([
             self.info_area,
             [
                 self.labels_display,
-                [self.rotations, self.rotations1]
+                [
+                    "speckle ratio", self.select_ratio,
+                    "resolution", self.select_resolution,
+                    self.rotations, 
+                    self.rotations1,
+                ]
             ],
         ])
         dash.css({"background-color": "#ddd"})
         await dash.link()
+        self.draw_image()
+
+    def dropdown_callback(self, *ignored):
+        [ratio_str] = self.select_ratio.selected_values
+        [resolution_str] = self.select_resolution.selected_values
+        self.ratio = float(ratio_str)
+        self.resolution = int(resolution_str)
+        self.sample_arrays()
         self.draw_image()
 
     def draw_image(self, *ignored):
