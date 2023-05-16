@@ -61,3 +61,8 @@ Open gizmo using link (control-click / open link)
 
 Open the link provided in a suitable web browser to start the visualization.
 
+## Notes on the "overlayed segmentation" proof of concept
+
+<a href="overlayed_segmentation.md">Please follow this link for information
+on how to use the overlayed segmentation proof of concept. (Temporary link.)</a>
+
