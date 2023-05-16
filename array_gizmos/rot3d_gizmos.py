@@ -291,7 +291,7 @@ class AdjustableLabelsAndImage:
 
 class OverlayedLabels:
 
-    def __init__(self, labels1, labels2, width=500, title="Overlayed labels.", ratio=0.05, resolution=200):
+    def __init__(self, labels1, labels2, width=700, title="Overlayed labels.", ratio=0.05, resolution=200):
         self.title = title
         self.ratio = ratio
         self.resolution = resolution
@@ -352,7 +352,7 @@ class OverlayedLabels:
         self.select_resolution.resize(width=80)
         width = self.width
         self.info_area = Text("Overlayed segmentation")
-        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, options=dict(width=100))
+        self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
         self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, )
         self.labels_display = Image(height=width, width=width)
         dash = Stack([
@@ -362,8 +362,8 @@ class OverlayedLabels:
                 [
                     "speckle ratio", self.select_ratio,
                     "resolution", self.select_resolution,
-                    self.rotations, 
-                    self.rotations1,
+                    "rotate both", self.rotations, 
+                    "rotate newer", self.rotations1,
                 ]
             ],
         ])
