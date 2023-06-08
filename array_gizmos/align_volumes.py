@@ -142,8 +142,8 @@ class TimeStampVolume:
         self.ts_num = ts_num
         self.from_sequence = from_sequence
         #self.volume_array = volume_array
-        dxdydz = from_sequence.dIJK
-        unsliced = Volume3D(volume_array, dxdydz=dxdydz)
+        self.dxdydz = from_sequence.dIJK
+        unsliced = Volume3D(volume_array, dxdydz=self.dxdydz)
         (self.sliced, self.slicing) = unsliced.nonzeros()
         self.width = self.sliced.width()
         self.dvoxel = dvoxel
@@ -213,6 +213,14 @@ class TimeStampPair:
         self.reset_button = gz.Button("Reset", on_click=self.reset_translations)
         self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
         self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, )
+        default_path = "alignment_%s_%s.json" % (
+            self.volume1.ts_num, self.volume2.ts_num
+        )
+        self.path_input = gz.LabelledInput(
+            "save to:", 
+            initial_value=default_path,
+            size=100).on_enter(self.save_click)
+        self.save_button = gz.Button("Save", on_click=self.save_click)
         self.x_slider = gz.Slider(
             minimum=-10,
             maximum=10,
@@ -259,6 +267,7 @@ class TimeStampPair:
                 ]
             ],
             [self.reset_button, self.translation_area],
+            [self.path_input, self.save_button],
         ])
         dash.css({"background-color": "#ddd"})
         self.dashboard = dash
@@ -291,13 +300,14 @@ class TimeStampPair:
         roll = self.rotations.roll
         yaw = self.rotations.yaw
         pitch = self.rotations.pitch
-        roll1 = self.rotations1.roll
-        yaw1 = self.rotations1.yaw
-        pitch1 = self.rotations1.pitch
+        roll1 = self.roll = self.rotations1.roll
+        yaw1 = self.yaw = self.rotations1.yaw
+        pitch1 = self.pitch = self.rotations1.pitch
         dx = dwidth * self.x_slider.value
         dy = - dwidth * self.y_slider.value
         dz = dwidth * self.z_slider.value
         translation = (dx, dy, dz)
+        self.translation = translation
         self.translation_area.text("translation: " + repr(translation))
         self.volume2.transform(roll1, pitch1, yaw1, translation)
         combined_volume = self.volume2.combined(self.volume1)
@@ -306,4 +316,27 @@ class TimeStampPair:
         #print("dtype", projected.dtype, projected.max(), projected.min(), projected.shape)
         colored = colorizers.colorize_array(projected, self.colors)
         self.labels_display.change_array(colored)
+
+    def json_parameters(self):
+        return dict(
+            description = "Volume alignment parameters",
+            volume1 = self.volume1.json_parameters(),
+            volume2 = self.volume2.json_parameters(),
+            roll = self.roll,
+            pitch = self.pitch,
+            yaw = self.yaw,
+            translation = list(self.translation),
+        )
+    
+    def save_json(self, to_path):
+        import json
+        ob = self.json_parameters()
+        f = open(to_path, "w")
+        json.dump(ob, f, indent=4)
+        f.close()
+
+    def save_click(self, *ignored):
+        path = self.path_input.value
+        self.save_json(path)
+        self.info_area.text("Parameters saved to: " + repr(path))
 
