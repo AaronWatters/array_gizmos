@@ -146,7 +146,16 @@ class TimeStampVolume:
         unsliced = Volume3D(volume_array, dxdydz=dxdydz)
         (self.sliced, self.slicing) = unsliced.nonzeros()
         self.width = self.sliced.width()
+        self.dvoxel = dvoxel
         self.rectify(dvoxel)
+
+    def json_parameters(self):
+        return dict(
+            description="Time stamp volume parameters",
+            timestamp_number=self.ts_num,
+            source_dimensions=self.dxdydz.tolist(),
+            dvoxel=float(self.dvoxel),
+        )
 
     def rectify(self, dvoxel):
         self.dvoxel = dvoxel
@@ -200,6 +209,8 @@ class TimeStampPair:
         self.stride = 1
         self.select_stride.resize(width=80)
         self.info_area = gz.Text("Overlayed segmentation")
+        self.translation_area = gz.Text("translation: (0,0,0)")
+        self.reset_button = gz.Button("Reset", on_click=self.reset_translations)
         self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
         self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, )
         self.x_slider = gz.Slider(
@@ -247,10 +258,17 @@ class TimeStampPair:
                     #self.z_slider,
                 ]
             ],
+            [self.reset_button, self.translation_area],
         ])
         dash.css({"background-color": "#ddd"})
         self.dashboard = dash
         return dash
+    
+    def reset_translations(self, *ignored):
+        self.x_slider.set_value(0)
+        self.y_slider.set_value(0)
+        self.z_slider.set_value(0)
+        self.draw_image()
 
     def dropdown_callback(self, *ignored):
         """After gizmo is live, sample the volumes and compute the image display."""
@@ -280,6 +298,7 @@ class TimeStampPair:
         dy = - dwidth * self.y_slider.value
         dz = dwidth * self.z_slider.value
         translation = (dx, dy, dz)
+        self.translation_area.text("translation: " + repr(translation))
         self.volume2.transform(roll1, pitch1, yaw1, translation)
         combined_volume = self.volume2.combined(self.volume1)
         rotated = combined_volume.rotate(roll, pitch, yaw)
