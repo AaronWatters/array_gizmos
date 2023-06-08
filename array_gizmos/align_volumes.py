@@ -267,7 +267,7 @@ class TimeStampPair:
                 ]
             ],
             [self.reset_button, self.translation_area],
-            [self.path_input, self.save_button],
+            [self.path_input.label_container, self.save_button],
         ])
         dash.css({"background-color": "#ddd"})
         self.dashboard = dash
