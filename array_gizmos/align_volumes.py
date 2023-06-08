@@ -83,8 +83,11 @@ class Volume3D:
         txyz = np.array(txyz, dtype=self.dtype)
         return Volume3D(self.array, self.corner000 + txyz, self.dxdydz, self.dtype)
     
-    def speckle(self, ratio):
-        speckled = operations3d.speckle(self.array, ratio)
+    def speckle(self, ratio, stride=1):
+        array = self.array
+        if stride > 1:
+            array = array[::stride, ::stride, ::stride]
+        speckled = operations3d.speckle(array, ratio)
         return Volume3D(speckled, self.corner000, self.dxdydz, self.dtype)
     
     def combine_nonzeros(self, other):
@@ -160,8 +163,8 @@ class TimeStampVolume:
     def combined(self, other):
         return self.translated.combine_nonzeros(other.translated)
     
-    def speckle(self, ratio):
-        self.speckled = self.rotatable.speckle(ratio)
+    def speckle(self, ratio, stride=1):
+        self.speckled = self.rotatable.speckle(ratio, stride)
         self.rotated = self.speckled
         self.translated = self.speckled
 
@@ -189,12 +192,13 @@ class TimeStampPair:
     def make_dashboard(self, width=700):
         """Basic graphic layout."""
         ratios = "1 0.5 0.1 0.05 0.02 0.01".split()
-        resolutions = "50 100 200 250 300 350 400".split()
+        strides = "1 2 3 4 5".split()
         self.select_ratio = gz.DropDownSelect(ratios, selected_value="0.05", on_click=self.dropdown_callback,)
         self.ratio = 0.05
         self.select_ratio.resize(width=100)
-        self.select_resolution = gz.DropDownSelect(resolutions, selected_value="200", on_click=self.dropdown_callback,)
-        self.select_resolution.resize(width=80)
+        self.select_stride = gz.DropDownSelect(strides, selected_value="1", on_click=self.dropdown_callback,)
+        self.stride = 1
+        self.select_stride.resize(width=80)
         self.info_area = gz.Text("Overlayed segmentation")
         self.rotations = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image)
         self.rotations1 = gz_aircraft_axes.AircraftAxes(on_change=self.draw_image, )
@@ -235,7 +239,7 @@ class TimeStampPair:
                 ],
                 [
                     "speckle ratio", self.select_ratio,
-                    #"resolution", self.select_resolution,
+                    "stride", self.select_stride,
                     "rotate both", self.rotations, 
                     "rotate newer", self.rotations1,
                     self.x_slider,
@@ -252,13 +256,16 @@ class TimeStampPair:
         """After gizmo is live, sample the volumes and compute the image display."""
         [ratio_str] = self.select_ratio.selected_values
         self.ratio = float(ratio_str)
+        [stride_str] = self.select_stride.selected_values
+        self.stride = int(stride_str)
         self.sample_arrays()
         self.draw_image()
 
     def sample_arrays(self, *ignored):
         ratio = self.ratio
-        self.volume1.speckle(ratio)
-        self.volume2.speckle(ratio)
+        stride = self.stride
+        self.volume1.speckle(ratio, stride)
+        self.volume2.speckle(ratio, stride)
 
     def draw_image(self, *ignored):
         """After gizmo is live, compute the image display."""
