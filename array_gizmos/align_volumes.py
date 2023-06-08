@@ -14,7 +14,7 @@ class Volume3D:
 
     def __init__(self, array, corner000xyz = (0,0,0), dxdydz=(1,1,1), dtype=np.float32):
         #assert np.issubdtype(array.dtype, int), "array should be integral: " + repr(array.dtype)
-        print("Volume3D", array.dtype, array.shape, corner000xyz, dxdydz)
+        #print("Volume3D", array.dtype, array.shape, corner000xyz, dxdydz)
         assert array.min() >= 0, "array should be non-negative %s" % array.min()
         assert array.max() <= 2, "array should have values 0, 1, or 2 %s" % array.max()
         self.array = array
@@ -32,7 +32,7 @@ class Volume3D:
         mins = slicing[:, 0]
         corner = mins * self.dxdydz
         nonzero_array = operations3d.slice3(self.array, slicing)
-        print("nonzero", nonzero_array.shape)
+        #print("nonzero", nonzero_array.shape)
         volume = Volume3D(nonzero_array, corner, self.dxdydz, self.dtype)
         return (volume, slicing)
     
@@ -40,7 +40,7 @@ class Volume3D:
         dxdydz = (dvoxel,) * 3
         dI, dJ, dK = self.dxdydz
         rectified = operations3d.rectify(self.array, dI, dJ, dK, dvoxel)
-        print(self.array.shape, "rectified", rectified.shape)
+        #(self.array.shape, "rectified", rectified.shape)
         return Volume3D(rectified, self.corner000, dxdydz, self.dtype)
     
     def dimensions(self):
@@ -95,7 +95,7 @@ class Volume3D:
         #dtype = self.dtype
         #assert dtype == other.dtype, "only combine same dtypes."
         dtype = self.array.dtype
-        print(repr((dxdydz, other.dxdydz)))
+        #print(repr((dxdydz, other.dxdydz)))
         assert np.allclose(dxdydz, other.dxdydz), "only combine with similar dimensions."
         mins = np.minimum(self.minxyz(), other.minxyz())
         maxes = np.maximum(self.maxxyz(), other.maxxyz())
@@ -279,11 +279,12 @@ class TimeStampPair:
         dx = dwidth * self.x_slider.value
         dy = - dwidth * self.y_slider.value
         dz = dwidth * self.z_slider.value
-        self.volume2.transform(roll1, pitch1, yaw1, (dx, dy, dz))
+        translation = (dx, dy, dz)
+        self.volume2.transform(roll1, pitch1, yaw1, translation)
         combined_volume = self.volume2.combined(self.volume1)
         rotated = combined_volume.rotate(roll, pitch, yaw)
         projected = operations3d.extrude0(rotated.array)
-        print("dtype", projected.dtype, projected.max(), projected.min(), projected.shape)
+        #print("dtype", projected.dtype, projected.max(), projected.min(), projected.shape)
         colored = colorizers.colorize_array(projected, self.colors)
         self.labels_display.change_array(colored)
 
