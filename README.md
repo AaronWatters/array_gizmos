@@ -5,6 +5,15 @@ A collection of array operations and visualizations.
 
 This module is in experimental/development mode and it also uses experimental dependancies.
 
+Install the jp_doodle dependancy manually in development mode:
+
+```bash
+% git clone https://github.com/AaronWatters/jp_doodle.git
+% cd jp_doodle
+% pip install -e .
+% cd ..
+```
+
 Install the H5Gizmos dependancy manually in development mode:
 
 ```bash
@@ -61,7 +70,12 @@ Open gizmo using link (control-click / open link)
 
 Open the link provided in a suitable web browser to start the visualization.
 
-## Notes on the "overlayed segmentation" proof of concept
+## The volume alignment visualization
+
+<a href="volume_alignment.md">Follow this link for documentation on how
+to configure and use the label volume alignment interactive visualization.</a>
+
+### Notes on the "overlayed segmentation" proof of concept (historical/deprecated)
 
 <a href="overlayed_segmentation.md">Please follow this link for information
 on how to use the overlayed segmentation proof of concept. (Temporary link.)</a>

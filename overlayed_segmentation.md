@@ -1,4 +1,6 @@
 
+## The following documentation documents a deprecated interface.
+
 # Notes on the overlayed segmentation proof of concept.
 
 These are some temporary notes on the "overlayed segmentation" proof of concept.
