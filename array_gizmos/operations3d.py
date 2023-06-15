@@ -280,3 +280,31 @@ def rotation_buffer(arr3d):
     Kstart = round(0.5 * (N-K))
     buffer[Istart:Istart+I, Jstart:Jstart+J, Kstart:Kstart+K] = arr3d
     return buffer
+
+
+def shade(array, shadow_index_map, shadow_mask):
+    all_shaded = shadow_index_map[array]
+    shadowed = np.where(shadow_mask, all_shaded, array)
+    return shadowed
+
+def shadow3d0(array3d, shadow_index_map):
+    "shadow using the planes from index 0."
+    shadow_mask = (array3d[0] * 0).astype(bool)
+    result = array3d.copy()
+    for (i, plane) in enumerate(array3d):
+        result[i] = shade(plane, shadow_index_map, shadow_mask)
+        shadow_mask = np.logical_or(shadow_mask, (plane != 0))
+    return result
+
+def shadow3d(array3d, shadow_index_map, axis=0):
+    (A, B, C) = (0, 1, 2)
+    assert axis in (0,1,2), "bad axis for shadowing " + repr(axis)
+    if axis == 1:
+        (A, B, C) = (1, 0, 2)
+    if axis == 2:
+        (A, B, C) = (2, 1, 0)
+    [iA, iB, iC] = invertABC(A, B, C)
+    swapped = swapABC(array3d, A, B, C)
+    shaded0 = shadow3d0(swapped, shadow_index_map)
+    shaded = swapABC(shaded0, iA, iB, iC)
+    return shaded
