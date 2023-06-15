@@ -184,11 +184,13 @@ class TimeStampPair:
         [0,0,0],
         [255,0,0],
         [0,255,255],
+        [200,0,0],
+        [0,200,200],
         [128,0,0],
         [0,128,128],
     ], dtype=np.uint8)
 
-    shadow_index_map = np.array([0,3,4], dtype=np.uint8)
+    shadow_index_map = np.array([0,3,4,5,6,5,6], dtype=np.uint8)
 
     def __init__(self, ts_volume1, ts_volume2, from_sequence, dvoxel):
         self.volume1 = from_sequence.get_volume(ts_volume1, dvoxel, marker=1)
@@ -318,7 +320,8 @@ class TimeStampPair:
         combined_volume = self.volume2.combined(self.volume1)
         rotated = combined_volume.rotate(roll, pitch, yaw)
         shadowed = operations3d.shadow3d(rotated.array, self.shadow_index_map, axis=2)
-        projected = operations3d.extrude0(shadowed)
+        shadowed1 = operations3d.shadow3d(shadowed, self.shadow_index_map, axis=1)
+        projected = operations3d.extrude0(shadowed1)
         #print("dtype", projected.dtype, projected.max(), projected.min(), projected.shape)
         colored = colorizers.colorize_array(projected, self.colors)
         self.labels_display.change_array(colored)
