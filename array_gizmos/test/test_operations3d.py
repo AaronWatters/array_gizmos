@@ -1,7 +1,35 @@
 import unittest
-from array_gizmos import operations3d
+from array_gizmos import operations3d, transforms3d
 import numpy as np
 
+pi2 = np.pi * 0.5
+
+class Test_airplane_transforms(unittest.TestCase):
+
+    def test1(self, translation=(1,1,1), yaw=1, pitch=1, roll=1):
+        translation = np.array(translation)
+        M = transforms3d.airplane_matrix(translation, yaw, pitch, roll)
+        (t, y, p, r) = transforms3d.airplane_parameters(M)
+        self.assertAlmostEqual(t.tolist(), translation.tolist())
+        self.assertAlmostEqual(y, yaw)
+        self.assertAlmostEqual(p, pitch)
+        self.assertAlmostEqual(r, roll)
+
+    def testa(self):
+        return self.test1([5,6,7], 0.2, 0.4, 0.6)
+    
+    def testb(self):
+        return self.test1([5,-6,7], 0.42, -0.4, 0.6)
+    
+    def testc(self):
+        return self.test1([-15,-6,7], -0.8, -0.4, 0.6)
+    
+    def testpi2(self):
+        return self.test1([-15,-6,7], -0.8, pi2, 0)
+    
+    def testnpi2(self):
+        return self.test1([-15,-6,7], -0.8, -pi2, 0)
+    
 class Test_specific_shape(unittest.TestCase):
     
     def test432(self):
