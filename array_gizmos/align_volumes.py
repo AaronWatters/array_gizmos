@@ -188,9 +188,11 @@ class TimeStampPair:
         [0,200,200],
         [128,0,0],
         [0,128,128],
+        [100,0,0],
+        [0,100,100],
     ], dtype=np.uint8)
 
-    shadow_index_map = np.array([0,3,4,5,6,5,6], dtype=np.uint8)
+    shadow_index_map = np.array([0,3,4,5,6,7,8], dtype=np.uint8)
 
     def __init__(self, ts_volume1, ts_volume2, from_sequence, dvoxel):
         self.volume1 = from_sequence.get_volume(ts_volume1, dvoxel, marker=1)
