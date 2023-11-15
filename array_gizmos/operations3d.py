@@ -132,7 +132,7 @@ def shearKJ(array, radians):
     "Shear the 3d array at the middle by radians in the JK dimensions."
     # xxx might be generalizable to 2d etc if reworked for IJ
     # Used primarily to implement rotation.
-    (I, J, K) = array.shape
+    (I, J, K) = array.shape[:3]
     result = array.copy()
     result[:] = 0
     Jmid = J / 2
@@ -272,9 +272,10 @@ def rotate3d(array, theta, phi, gamma=0):
 
 def rotation_buffer(arr3d):
     "Embed array in another array large enough to support rotations."
-    (I, J, K) = arr3d.shape
+    (I, J, K) = arr3d.shape[:3]
     N = math.ceil(np.sqrt(I*I + J*J + K*K))
-    buffer = np.zeros((N, N, N), dtype=arr3d.dtype)
+    new_shape = (N, N, N) + arr3d.shape[3:]
+    buffer = np.zeros(new_shape, dtype=arr3d.dtype)
     Istart = round(0.5 * (N-I))
     Jstart = round(0.5 * (N-J))
     Kstart = round(0.5 * (N-K))
