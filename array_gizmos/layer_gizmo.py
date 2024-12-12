@@ -7,6 +7,7 @@ class ImageViewer:
     def __init__(self, array3d, name="3d volume"):
         self.name = name
         self.array3d = array3d
+        self.display_array = array3d
         shape = array3d.shape
         lshape = len(shape)
         self.shape = shape
@@ -21,6 +22,8 @@ class ImageViewer:
                 if self.min >= 0 and self.max <= 1000:
                     self.colorizable = True
                     print("colorizable")
+            else:
+                self.display_array = 255.0 * (array3d - self.min) / (self.max - self.min)
         else:
             assert lshape == 4, "array must be 3d scalars or 4d with colors " + repr(shape)
             assert self.min >= 0 and self.max <= 255, "color intensities should be in range 0..255"
@@ -28,11 +31,12 @@ class ImageViewer:
         (self.depth, self.width, self.height) = shape[:3]
 
     def get_image(self, layer, projection=None, colorize=False):
-        result = layer0 = self.array3d[layer]
+        array3d = self.display_array
+        result = layer0 = array3d[layer]
         if projection == "max_value":
-            result = layer0 = self.array3d[layer:].max(axis=0)
+            result = layer0 = array3d[layer:].max(axis=0)
         if projection == "extruded":
-            result = layer0 = operations3d.extrude0(self.array3d[layer:])
+            result = layer0 = operations3d.extrude0(array3d[layer:])
         if self.colors:
             if self.max <= 1.0:
                 # scale the colors
