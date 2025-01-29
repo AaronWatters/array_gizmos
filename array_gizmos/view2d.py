@@ -117,7 +117,11 @@ def test_vbars():
 class Histogram(VBars):
 
     def __init__(self, array, width=600, height=200):
-        bins = array.max() + 1
+        M = int(array.max() - array.min())
+        if (M > 1000):
+            bins = 1000
+        else:
+            bins = M + 1
         values, _ = np.histogram(array, bins=bins)
         super().__init__(values, width, height)
 
@@ -151,10 +155,22 @@ class ImageOverviewAndDetail:
 
     clicked = False
     
-    def __init__(self, array, width=600, histogram_height=200):
+    def __init__(self, array, 
+                 width=600, 
+                 histogram_height=200,
+                 title="Image Overview and Detail"):
+        self.title = title
+        # scale the array to 0..255 as np.uint8
+        m = array.min()
+        M = array.max()
+        if M == m:
+            array = np.zeros(array.shape, dtype=np.uint8)
+        else:
+            array = array.astype(np.float64)
+            array = ((array - m) * 255 // (array.max() - m)).astype(np.uint8)
         self.array = array
         self.width = width
-        (I, J) = array.shape
+        self.shape = (I, J) = array.shape[:2]
         self.stride = J // width
         self.focus = (I // 2, J // 2)
         self.height = I // self.stride
@@ -162,7 +178,7 @@ class ImageOverviewAndDetail:
         self.dashboard = self.dash()
 
     def detail_boundaries(self):
-        (I, J) = self.array.shape
+        (I, J) = self.shape
         (i, j) = self.focus
         #stride = self.stride
         width = self.width
@@ -176,15 +192,25 @@ class ImageOverviewAndDetail:
     def detail(self):
         (i0, i1, j0, j1) = self.detail_boundaries()
         array = self.array[i0:i1, j0:j1]
-        return array
+        # make edges of array black
+        detail = array.copy()
+        #array[0, :] = 0
+        #array[-1, :] = 0
+        #array[:, 0] = 0
+        #array[:, -1] = 0
+        return (detail, array)
     
     def overview(self):
         array = self.array[::self.stride, ::self.stride]
-        colored_array = np.zeros(array.shape + (3,), dtype=array.dtype)
-        colored_array[:, :, 0] = array
-        colored_array[:, :, 1] = array
-        colored_array[:, :, 2] = array
-        # draw a red inverted outline around focus
+        if len(array.shape) == 2:
+            colored_array = np.zeros(array.shape + (3,), dtype=array.dtype)
+            colored_array[:, :, 0] = array
+            colored_array[:, :, 1] = array
+            colored_array[:, :, 2] = array
+        else:
+            assert len(array.shape) == 3
+            colored_array = array.copy()
+        # draw a inverted outline around focus
         bounds = self.detail_boundaries()
         # adjust the bounds to the overview array using numpy with stride
         (i0, i1, j0, j1) = np.array(bounds) // self.stride
@@ -192,22 +218,33 @@ class ImageOverviewAndDetail:
         colored_array[i1, j0:j1] = 255 - colored_array[i1, j0:j1]
         colored_array[i0:i1, j0] = 255 - colored_array[i0:i1, j0]
         colored_array[i0:i1, j1] = 255 - colored_array[i0:i1, j1]
+        # make edges of array black
+        #colored_array[0, :] = 0
+        #colored_array[-1, :] = 0
+        #colored_array[:, 0] = 0
+        #colored_array[:, -1] = 0
         return (array, colored_array)
 
     def dash(self):
-        arr_detail = self.detail()
+        (arr_detail, disp_detail) = self.detail()
         (arr_overview, c_overview) = self.overview()
+        title_text = h5.Text(self.title)
         overview_text = h5.Text("Overview")
         detail_text = h5.Text("Detail")
-        image_detail = h5.Image(array=arr_detail, width=self.width, pixelated=True)
-        image_overview = h5.Image(array=c_overview, width=self.width, pixelated=True)
+        image_detail = h5.Image(array=disp_detail, width=self.width, pixelated=True, scale=False)
+        image_overview = h5.Image(array=c_overview, width=self.width, pixelated=True, scale=False)
         image_overview.on_pixel(self.focus_click, "click")
         image_overview.on_pixel(self.focus_move, "mousemove")
+        image_overview.css({"border": "5px solid red"})
+        image_detail.css({"border": "5px solid red"})
         detail_histogram = Histogram(arr_detail, self.width, self.histogram_height)
         overview_histogram = Histogram(arr_overview, self.width, self.histogram_height)
-        dashboard = h5.Shelf([
-            [overview_text, image_overview, overview_histogram.dashboard],
-            [detail_text, image_detail, detail_histogram.dashboard]
+        dashboard = h5.Stack([
+            title_text,
+            [
+                [overview_text, image_overview, overview_histogram.dashboard],
+                [detail_text, image_detail, detail_histogram.dashboard]
+            ]
         ])
         self.image_detail = image_detail
         self.image_overview = image_overview
@@ -237,16 +274,16 @@ class ImageOverviewAndDetail:
         bounds_text = "[%s..%s, %s..%s]" % bounds
         self.detail_text.text(bounds_text)
         (_, colored_overview) = self.overview()
-        self.image_overview.change_array(colored_overview)
-        detail = self.detail()
-        self.image_detail.change_array(detail)
-        self.detail_histogram.change_array(detail)
+        self.image_overview.change_array(colored_overview, scale=False)
+        (arr_detail, disp_detail) = self.detail()
+        self.image_detail.change_array(disp_detail, scale=True)
+        self.detail_histogram.change_array(arr_detail)
 
     async def show(self):
-        await self.dashboard.show()
+        await self.dashboard.show(title=self.title)
 
     async def link(self):
-        await self.dashboard.link()
+        await self.dashboard.link(title=self.title)
 
     
 def test_image_overview_and_detail():
