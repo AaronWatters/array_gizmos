@@ -3,6 +3,31 @@
 def rgbhtml(rgb):
     return "rgb" + repr(tuple(rgb))
 
+def html2rgb(html):
+    "reverse of rgbhtml"
+    return eval(html[4:-1].strip())
+
+def inverseRGB(rgb):
+    "Inverse of (r,g,b) in range 0 to 255"
+    r, g, b = rgb
+    return (255 - r, 255 - g, 255 - b)
+
+def inverseRGBhtml(html):
+    "Inverse of rgb(r,g,b) string in range 0 to 255"
+    rgb = html2rgb(html)
+    inv = inverseRGB(rgb)
+    return rgbhtml(inv)
+
+def brightness(rgb):
+    "Brightness of (r,g,b) in range 0 to 1.0"
+    r, g, b = rgb
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+
+def html_brightness(rgbstring):
+    "Brightness of rgb(r,g,b) string in range 0 to 1.0"
+    rgb = eval(rgbstring[4:-1].strip())
+    return brightness(rgb)
+
 def colordiv(rgb):
     return '<div style="background-color:%s">%s</div>' % (rgbhtml(rgb), rgb)
 
