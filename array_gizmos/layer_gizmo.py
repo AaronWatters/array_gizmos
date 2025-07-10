@@ -52,13 +52,17 @@ class ImageViewer:
             display_width = self.width
         ratio = display_width / self.width
         display_height = ratio * self.height
-        self.layer_slider = Slider(
-            title="layer", 
-            value=0, 
-            minimum=0, 
-            maximum=self.depth-1, 
-            step=1, 
-            on_change=self.draw_image)
+        if self.depth > 1:
+            self.layer_slider = Slider(
+                title="layer", 
+                value=0, 
+                minimum=0, 
+                maximum=self.depth-1, 
+                step=1, 
+                on_change=self.draw_image)
+        else:
+            self.layer_slider = Text("Only one layer, no slider")
+            self.layer_slider.value = 0
         self.layer_slider.resize(width=display_width * 0.5)
         self.image_display = Image(height=display_height, width=display_width)
         projections = ["none", "max_value"]
