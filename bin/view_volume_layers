@@ -23,11 +23,12 @@ View layers using the array sizing
 """
 
 from array_gizmos.layer_gizmo import ImageViewer
+from array_gizmos import loaders
 import sys
 from PIL import Image
 from numpy import asarray
 from H5Gizmos import serve
-from mouse_embryo_labeller import tools
+#from mouse_embryo_labeller import tools
 
 
 DEFAULT_WIDTH = 600
@@ -50,6 +51,7 @@ try:
     else:
         assert nargs>0 and nargs<=2, "bad args: " + repr(args)
 
+    """
     if filename.endswith(".tif") or filename.endswith(".tiff"):
         data = tools.load_tiff_array(filename)
     elif filename.endswith(".klb"):
@@ -58,6 +60,19 @@ try:
     else:
         image = Image.open(filename)
         data = asarray(image)
+    """
+
+    data = None
+
+    try:
+        data = loaders.load_volume(filename)
+    except loaders.VolumeLoadError as e:
+        try:
+            image = Image.open(filename)
+            data = asarray(image)
+        except Exception as e2:
+            print("Error loading volume:", filename)
+            raise
 
     viewer = ImageViewer(data, filename)
 
