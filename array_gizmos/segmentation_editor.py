@@ -28,7 +28,7 @@ class VolumeMix:
             dJ=1, 
             dK=1,
             zoom=1.0,
-            dw=10,):
+            dw=5,):
         self.zoom = zoom
         self.volumeImage = volumeImage
         self.volumeMask = volumeMask
@@ -68,9 +68,9 @@ class VolumeMix:
         I, J, K = IJK
         si, sj, sk = shape[:3]
         dw = self.dw
-        wI = max(1, dw // self.dI)
-        wJ = max(1, dw // self.dJ)
-        wK = max(1, dw // self.dK)
+        wI = max(0, dw // self.dI - 1)
+        wJ = max(0, dw // self.dJ - 1)
+        wK = max(0, dw // self.dK - 1)
         i1 = max(0, I - wI)
         i2 = min(si - 1, I + wI)
         j1 = max(0, J - wJ)
