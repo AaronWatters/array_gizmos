@@ -1,6 +1,7 @@
 
 
 def rgbhtml(rgb):
+    rgb = map(int, rgb)
     return "rgb" + repr(tuple(rgb))
 
 def html2rgb(html):
