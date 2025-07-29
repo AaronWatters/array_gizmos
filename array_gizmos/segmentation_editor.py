@@ -56,6 +56,31 @@ class VolumeMix:
         self.positionMixes()
         self.selectedLabel = 0  # Default selected label
 
+    def paint(self, IJK):
+        """
+        Paint the selected label at the specified IJK position.
+        """
+        if self.selectedLabel < 0 or self.selectedLabel >= len(self.color_mapping_array):
+            raise ValueError("Selected label out of range: " + str(self.selectedLabel))
+        print("Painting label", self.selectedLabel, "at position", IJK)
+        mask = self.volumeMask
+        shape = np.array(mask.shape)
+        I, J, K = IJK
+        si, sj, sk = shape[:3]
+        dw = self.dw
+        wI = max(1, dw // self.dI)
+        wJ = max(1, dw // self.dJ)
+        wK = max(1, dw // self.dK)
+        i1 = max(0, I - wI)
+        i2 = min(si - 1, I + wI)
+        j1 = max(0, J - wJ)
+        j2 = min(sj - 1, J + wJ)
+        k1 = max(0, K - wK)
+        k2 = min(sk - 1, K + wK)
+        self.volumeMask[i1:i2+1, j1:j2+1, k1:k2+1] = self.selectedLabel
+        for mix in self.mixes.values():
+            mix.slice_volumes(self.volumeImage, self.volumeMask, IJK)
+
     def selectedColor(self):
         return self.color_mapping_array[self.selectedLabel]
     
@@ -311,7 +336,12 @@ class imageMix:
     def click(self, event):
         self.tracking = not self.tracking
         label = self.move(event)
-        if label is not None:
+        shifted = event.get("shiftKey", False)
+        if shifted:
+            print("Shifted click painting at ", self.IJK)
+            self.parent.paint(self.IJK)
+            self.tracking = False # stop tracking after painting
+        elif label is not None:
             print("Clicked label:", label, "at position:", self.IJK)
             self.parent.changeLabel(label)
         return label
