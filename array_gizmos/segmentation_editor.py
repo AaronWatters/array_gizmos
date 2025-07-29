@@ -54,6 +54,23 @@ class VolumeMix:
             "IK": mixIK,
         }
         self.positionMixes()
+        self.selectedLabel = 0  # Default selected label
+
+    def selectedColor(self):
+        return self.color_mapping_array[self.selectedLabel]
+    
+    def changeLabel(self, label):
+        """
+        Change the selected label for the segmentation.
+        """
+        if label < 0 or label >= len(self.color_mapping_array):
+            raise ValueError("Label out of range: " + str(label))
+        self.selectedLabel = label
+        color = self.selectedColor()
+        print("Selected label:", label, "Color:", color)
+        self.colorDiv.css({
+            "backgroundColor": color_list.rgbhtml(self.selectedColor()),
+        })
 
     def positionMixes(self, IJK=None):
         #p(("========= Positioning mixes with IJK:", IJK)
@@ -62,8 +79,11 @@ class VolumeMix:
             IJK = shape // 2
         self.IJK = IJK
         assert np.all(IJK < shape[:3]), "IJK indices out of bounds: " + repr(IJK) + " for shape: " + repr(shape )
+        selectedLabel = self.volumeMask[IJK[0], IJK[1], IJK[2]]
+        #self.changeLabel(selectedLabel) # not needed here, done in click
         for mix in self.mixes.values():
             mix.slice_volumes(self.volumeImage, self.volumeMask, self.IJK)
+        return selectedLabel
 
     def gizmo(self):
         """
@@ -71,6 +91,15 @@ class VolumeMix:
         """
         self.positionMixes()
         zoom = self.zoom
+        self.colorDiv = h5.Html("<div>color</div>")
+        color = color_list.rgbhtml(self.selectedColor())
+        print("Selected color:", color)
+        self.colorDiv.css({
+            "width": "100px",
+            "height": "20px",
+            "background-color": color,
+            "border": "1px solid black",
+        })
         display = h5.Stack([
             [
                 self.mixes["JK"].gizmo(zoom),
@@ -78,6 +107,7 @@ class VolumeMix:
             ],
             [
                 self.mixes["IK"].gizmo(zoom),
+                self.colorDiv,
             ],
         ])
         return display
@@ -111,6 +141,7 @@ class imageMix:
         self.mousePosition = None
         self.display = None
         self.IJK = [0, 0, 0]  # Default IJK position
+        self.tracking = False  # Whether to track mouse position
 
     def position3d(self, IJK, mouseposition):
         [a, b] = mouseposition
@@ -203,13 +234,17 @@ class imageMix:
         #p("mousePosition:", mousePosition, "selectedColor:", selectedColor, "shape:", combined_image.shape)
         if mousePosition is not None and selectedColor is not None:
             y, x = mousePosition
-            print("Mouse position:", x, y, "cols", cols, "rows", rows)
+            #print("Mouse position:", x, y, "cols", cols, "rows", rows)
             if 0 <= x < cols and 0 <= y < rows:
                 ##p( ("Drawing box at", x, y, "with color", selectedColor)
                 # draw a di/dj box around the mouse position
                 dw = self.dw
-                wI = max(1, dw // self.dI)
-                wJ = max(1, dw // self.dJ)
+                if self.transposed():
+                    wI = max(1, dw // self.dI)
+                    wJ = max(1, dw // self.dJ)
+                else:
+                    wI = max(1, dw // self.dJ)
+                    wJ = max(1, dw // self.dI)
                 x1 = max(0, x - wI)
                 x2 = min(cols-1, x + wI)
                 y1 = max(0, y - wJ)
@@ -264,7 +299,7 @@ class imageMix:
         ])
         return self.display
     
-    def move(self, event):
+    def move0(self, event): # not used
         #self.display.#p(event)
         selectedColor = self.selected_color
         column = event["pixel_column"]
@@ -274,15 +309,26 @@ class imageMix:
         self.update(lamda=lamda, mousePosition=mousePosition, selectedColor=selectedColor)
 
     def click(self, event):
+        self.tracking = not self.tracking
+        label = self.move(event)
+        if label is not None:
+            print("Clicked label:", label, "at position:", self.IJK)
+            self.parent.changeLabel(label)
+        return label
+
+    def move(self, event):
+        if not self.tracking:
+            return None
         column = event["pixel_column"]
         row = event["pixel_row"]
-        print("Click at row, col:", row, column, self.volumeIndices)
+        #print("Click at row, col:", row, column, self.volumeIndices)
         mousePosition = (row, column)
         IJK = self.position3d(self.IJK, mousePosition)
-        print("Click at IJK:", IJK)
+        #print("Click at IJK:", IJK)
         if self.parent is not None:
             #oldIJK = self.parent.IJK
-            self.parent.positionMixes(IJK)
+            label = self.parent.positionMixes(IJK)
+            return label
 
     """ not used
     def position(self, IJK, volumeImage=None, volumeMask=None):
