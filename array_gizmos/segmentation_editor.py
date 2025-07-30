@@ -18,6 +18,15 @@ def print(*args, **kwargs):
     from H5Gizmos.python.gizmo_server import force_print
     force_print(*args, **kwargs)
 
+def whiten(array1d, divisor=3):
+    assert array1d.dtype == np.uint8, "Array must be of type np.uint8"
+    r = array1d.ravel()
+    if len(r) > 0:
+        diff = 255 - r
+        r[:] = r + (diff // divisor)
+    array1d[:] = r.reshape(array1d.shape)
+    return array1d # modified in place
+
 class VolumeMix:
     def __init__(
             self, 
@@ -276,10 +285,19 @@ class imageMix:
                 y1 = max(0, y - wJ)
                 y2 = min(rows-1, y + wJ)
                 # just the border of the box
-                combined_image[y1:y2, x1, :] = selectedColor
-                combined_image[y1:y2, x2, :] = selectedColor
-                combined_image[y1, x1:x2, :] = selectedColor
-                combined_image[y2, x1:x2, :] = selectedColor
+                #combined_image[y1:y2, x1, :] = selectedColor
+                #combined_image[y1:y2, x2, :] = selectedColor
+                #combined_image[y1, x1:x2, :] = selectedColor
+                #combined_image[y2, x1:x2, :] = selectedColor
+                whiten(combined_image[y1:y2, x1, :], divisor=2)
+                whiten(combined_image[y1:y2, x2, :], divisor=2)
+                whiten(combined_image[y1, x1:x2, :], divisor=2)
+                whiten(combined_image[y2, x1:x2, :], divisor=2)
+                # draw a whitened cross hairs
+                whiten(combined_image[0:y1, x, :])
+                whiten(combined_image[y2:rows, x, :])
+                whiten(combined_image[y, 0:x1, :])
+                whiten(combined_image[y, x2:cols, :])
             else:
                 print("Mouse position out of bounds:", mousePosition, "for image shape:", combined_image.shape)
         else:
