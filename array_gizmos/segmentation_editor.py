@@ -78,8 +78,9 @@ class VolumeMix:
         k1 = max(0, K - wK)
         k2 = min(sk - 1, K + wK)
         self.volumeMask[i1:i2+1, j1:j2+1, k1:k2+1] = self.selectedLabel
-        for mix in self.mixes.values():
-            mix.slice_volumes(self.volumeImage, self.volumeMask, IJK)
+        #for mix in self.mixes.values():
+        #    mix.slice_volumes(self.volumeImage, self.volumeMask, IJK)
+        return self.positionMixes(IJK)
 
     def selectedColor(self):
         return self.color_mapping_array[self.selectedLabel]
@@ -347,6 +348,7 @@ class imageMix:
         return label
 
     def move(self, event):
+        shifted = event.get("shiftKey", False)
         if not self.tracking:
             return None
         column = event["pixel_column"]
@@ -357,8 +359,11 @@ class imageMix:
         #print("Click at IJK:", IJK)
         if self.parent is not None:
             #oldIJK = self.parent.IJK
-            label = self.parent.positionMixes(IJK)
-            return label
+            if shifted:
+                return self.parent.paint(IJK)
+            else:
+                label = self.parent.positionMixes(IJK)
+                return label
 
     """ not used
     def position(self, IJK, volumeImage=None, volumeMask=None):
