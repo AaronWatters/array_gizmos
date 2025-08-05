@@ -3,6 +3,8 @@ from . import operations3d
 import numpy as np
 from H5Gizmos import Stack, Slider, Image, CheckBoxes, Text, DropDownSelect
 
+speckle = True
+
 class ImageViewer:
     def __init__(self, array3d, name="3d volume"):
         self.name = name
@@ -44,7 +46,10 @@ class ImageViewer:
         else:
             if colorize:
                 #print("colorizing", layer0.shape)
-                result = colorizers.colorize_array(result)
+                cresult = colorizers.colorize_array(result)
+                if speckle:
+                    cresult = colorizers.speckle_background(cresult, result)
+                result = cresult
         return result
 
     async def gizmo(self, display_width=600):
