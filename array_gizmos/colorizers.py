@@ -6,6 +6,19 @@ from . import color_list
 import numpy as np
 from scipy import signal
 
+def speckle_background(colorImage, sourceImage):
+    """
+    Add speckles to the background of a color image.
+    """
+    colorImage = colorImage.copy()
+    r = sourceImage.ravel()
+    rZeroIndices = np.where(r==0)[0]
+    choice = np.where(np.random.random(len(rZeroIndices)) > 0.5)
+    specIndices = rZeroIndices[choice]
+    cravel = colorImage.reshape([-1,3])
+    cravel[specIndices] = np.array([[128, 128, 128]])
+    return colorImage
+
 def colorize_array(a, color_mapping_array=None):
     if color_mapping_array is None:
         maxlabel = a.max()
@@ -41,6 +54,18 @@ def boundary_image(labels, target_label, edge_array=edge_array):
     mask = (labels == target_label).astype(np.ubyte)
     test = signal.convolve2d(mask, edge_array, boundary='symm', mode='same')
     return (test!=0).astype(np.ubyte)
+
+def boundaries(labels, edge_array=edge_array):
+    """
+    reduce the labels regions to their boundaries.
+    """
+    result = np.zeros_like(labels, dtype=np.ubyte)
+    for label in np.unique(labels):
+        if label == 0:
+            continue
+        boundary = boundary_image(labels, label).astype(np.bool)
+        result[boundary] = label
+    return result
 
 def center_shapes(A1, A2):
     """
