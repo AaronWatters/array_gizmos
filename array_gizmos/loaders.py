@@ -25,7 +25,7 @@ def load_volume(fn):
     elif fn.endswith(".h5"):
         ar = load_h5(fn)
     elif fn.endswith(".tif") or fn.endswith(".tiff"):
-        ar = load_tiff(fn)
+        ar = load_tiff1(fn)
     elif fn.endswith(".klb"):
         ar = load_klb(fn)
     elif fn.endswith(".nii") or fn.endswith(".nii.gz"):
@@ -65,6 +65,22 @@ def load_tiff(tiff_path):
     for (i, aa) in enumerate(L):
         All[i] = aa
     return All
+
+def load_tiff1(tiff_path):
+    """
+    Load a volume from a tiff file.
+    """
+    try:
+        import tifffile
+    except ImportError:
+        print ("The tifffile package is required for tiff file loading.")
+        print ("It is not automatically installed with this package.")
+        print ("  pip install tifffile")
+        print ("Please install tifffile.")
+        raise
+    ar = tifffile.imread(tiff_path)
+    # xxxx flip j and k ??? -- not needed?
+    return ar
         
 def load_h5(fn):
     """

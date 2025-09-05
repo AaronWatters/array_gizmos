@@ -21,6 +21,7 @@ setup(
         "jp_doodle",
         "numpy",
         "H5Gizmos",
+        "tifffile",
         ],
     scripts = [
         "bin/compare_npz_labels",
