@@ -101,8 +101,10 @@ class ImageViewer:
         layer = self.layer_slider.value
         [projection] = self.selection.selected_values
         colorize = False
+        scale = True
         if self.colorizable:
             if self.colorize_checkbox.selected_values:
                 colorize = True
+                scale = False
         image = self.get_image(layer, projection, colorize)
-        self.image_display.change_array(image)
+        self.image_display.change_array(image, scale=scale)
