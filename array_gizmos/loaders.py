@@ -45,7 +45,7 @@ def load_npz(fn):
         if hasattr(ar, "shape") and len(ar.shape) == 3:
             return ar
         
-def load_tiff(tiff_path):
+def load_tiff0(tiff_path):
     """
     Load a volume from a tiff file.
     """
@@ -81,6 +81,8 @@ def load_tiff1(tiff_path):
     ar = tifffile.imread(tiff_path)
     # xxxx flip j and k ??? -- not needed?
     return ar
+
+load_tiff = load_tiff1
         
 def load_h5(fn):
     """
