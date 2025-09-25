@@ -21,7 +21,7 @@ class ImageViewer:
             print("3d array", shape, self.min, self.max)
             self.colors = False
             if np.issubdtype(dtype, np.integer):
-                if self.min >= 0 and self.max <= 1000:
+                if self.min >= 0 and self.max <= 100000:
                     self.colorizable = True
                     print("colorizable")
             else:
@@ -107,4 +107,4 @@ class ImageViewer:
                 colorize = True
                 scale = False
         image = self.get_image(layer, projection, colorize)
-        self.image_display.change_array(image, scale=scale)
+        self.image_display.change_array(image, scale=scale, url=False)
