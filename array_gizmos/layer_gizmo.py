@@ -60,8 +60,9 @@ class ImageViewer:
         if self.depth > 1:
             self.layer_slider = Slider(
                 title="layer", 
-                value=0, 
+                #value=0, 
                 minimum=0, 
+                value=self.depth // 2,
                 maximum=self.depth-1, 
                 step=1, 
                 on_change=self.draw_image)
@@ -87,9 +88,10 @@ class ImageViewer:
                 on_click=self.draw_image,
             )
             options = [self.selection, self.colorize_checkbox]
+        self.layer_text = Text("Layer: " + str(self.layer_slider.value))
         dash = Stack([
             "Image: " + repr([self.name, self.shape, self.min, self.max]),
-            self.layer_slider, 
+            [self.layer_text, self.layer_slider],
             options,
             self.image_display,
         ])
@@ -99,6 +101,7 @@ class ImageViewer:
 
     def draw_image(self, *ignored):
         layer = self.layer_slider.value
+        self.layer_text.text("Layer: " + str(layer))
         [projection] = self.selection.selected_values
         colorize = False
         scale = True
