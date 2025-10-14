@@ -20,6 +20,10 @@ def speckle_background(colorImage, sourceImage):
     return colorImage
 
 def colorize_array(a, color_mapping_array=None):
+    """
+    Colorize a 2d array of integer labels using the given color mapping array.
+    If no color mapping array is given then use a default set of colors.
+    """
     if color_mapping_array is None:
         maxlabel = a.max()
         color_choices = [(0,0,0)] + color_list.get_colors(maxlabel)
@@ -28,6 +32,88 @@ def colorize_array(a, color_mapping_array=None):
     colors = color_mapping_array[a.flatten()]
     colorized_array = colors.reshape(shape + (3,))
     return colorized_array
+
+def matplot_colorize(A, mapname, nanmap=(0,0,0), Amin=None, Amax=None):
+    """
+    Map a scalar ndarray A to RGB uint8 using a Matplotlib colormap.
+    Returns array of shape A.shape + (3,) and dtype uint8.
+    NaNs get the colormap's 'bad' color (default transparent -> RGB 0).
+    >>> B = matplot_colorize(A, "viridis")  # B.shape == A.shape + (3,)
+    """
+    import matplotlib as mpl
+    A = np.asarray(A)
+    Aravel = A.ravel()
+    Anans = np.isnan(Aravel)
+    Afinite = ~Anans
+    # Get the colormap (new API first, fallback for older MPL)
+    try:
+        cmap = mpl.colormaps[mapname]
+    except AttributeError:
+        cmap = mpl.cm.get_cmap(mapname)
+
+    Aravel_colorized = np.zeros( (len(Aravel), 3), dtype=np.ubyte)
+    if np.any(Afinite):
+        Amapped = Aravel[Afinite]
+        if Amin is None:
+            Amin = np.nanmin(Amapped)
+        if Amax is None:
+            Amax = np.nanmax(Amapped)
+        if Amax == Amin:
+            mid_rgba = np.asarray(cmap(0.5), dtype=np.float32)  # (4,)
+            rgb = (mid_rgba[:3] * 255).astype(np.uint8)
+            Aravel_colorized[Afinite] = rgb.reshape((1,3))
+        else:
+            norm = mpl.colors.Normalize(vmin=Amin, vmax=Amax, clip=True)
+            rgba = cmap(norm(Amapped)).astype(np.float32, copy=False)
+            rgb = (rgba[:, :3] * 255).astype(np.uint8)
+            Aravel_colorized[Afinite] = rgb
+    if np.any(Anans) and nanmap is not None:
+        Aravel_colorized[Anans] = np.array(nanmap, dtype=np.ubyte).reshape((1,3))
+    return Aravel_colorized.reshape(A.shape + (3,))
+
+
+def matplot_colorize0(A, mapname, nanmap=None):
+    """
+    Map a scalar ndarray A to RGB uint8 using a Matplotlib colormap.
+    Returns array of shape A.shape + (3,) and dtype uint8.
+    NaNs get the colormap's 'bad' color (default transparent -> RGB 0).
+    >>> B = matplot_colorize(A, "viridis")  # B.shape == A.shape + (3,)
+    """
+    import matplotlib as mpl
+    A = np.asarray(A)
+
+    # Get the colormap (new API first, fallback for older MPL)
+    try:
+        cmap = mpl.colormaps[mapname]
+    except AttributeError:
+        cmap = mpl.cm.get_cmap(mapname)
+
+    # Normalize to [0, 1] using finite values only
+    vmin = np.nanmin(A)
+    vmax = np.nanmax(A)
+
+    if not np.isfinite(vmin) or not np.isfinite(vmax):
+        # All values are NaN/inf -> return zeros
+        return np.zeros(A.shape + (3,), dtype=np.uint8)
+
+    if vmax == vmin:
+        # Constant field -> map everything to the midpoint color
+        mid_rgba = np.asarray(cmap(0.5), dtype=np.float32)  # (4,)
+        rgb = (mid_rgba[:3] * 255).astype(np.uint8)
+        out = np.empty(A.shape + (3,), dtype=np.uint8)
+        out[...] = rgb
+        return out
+
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=True)
+
+    # Apply colormap: shape -> A.shape + (4,), float in [0,1]
+    rgba = cmap(norm(A)).astype(np.float32, copy=False)
+
+    # Drop alpha and convert to uint8
+    rgb = (rgba[..., :3] * 255).astype(np.uint8)
+
+    return rgb
+
 
 def scale256(img, epsilon=1e-11, minimum=None):
     return scaleN(img, epsilon=epsilon, minimum=minimum, to_max=255.0, dtype=np.ubyte)
