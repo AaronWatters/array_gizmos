@@ -5,6 +5,7 @@
 
 import numpy as np
 import math
+from . import transforms3d as t3d
 
 def positive_slicing(M):
     """
@@ -287,6 +288,125 @@ def shade(array, shadow_index_map, shadow_mask):
     all_shaded = shadow_index_map[array]
     shadowed = np.where(shadow_mask, all_shaded, array)
     return shadowed
+
+def shape_indices0(shape3d):
+    """
+    Generate array of indices (i,j,k,1) for each element in 3d array of given shape
+    Simple implemantation for testing.
+    """
+    (I, J, K) = shape3d
+    result = np.zeros((I, J, K, 4), dtype=np.int)
+    for i in range(I):
+        for j in range(J):
+            for k in range(K):
+                result[i, j, k] = (i, j, k, 1)
+    return result
+
+def shape_indices(shape3d):
+    """
+    Generate array of indices (i,j,k,1) for each element in 3d array of given shape
+    Fast implementation using numpy broadcasting.
+    """
+    (I, J, K) = shape3d
+    i_coords = np.arange(I).reshape((I, 1, 1))
+    j_coords = np.arange(J).reshape((1, J, 1))
+    k_coords = np.arange(K).reshape((1, 1, K))
+    ones = np.ones((I, J, K), dtype=np.int)
+    result = np.zeros((I, J, K, 4), dtype=np.int)
+    result[:, :, :, 0] = i_coords
+    result[:, :, :, 1] = j_coords
+    result[:, :, :, 2] = k_coords
+    result[:, :, :, 3] = ones
+    return result
+
+def transform_indices(indices, affine4x4):
+    """
+    Apply 4x4 affine transformation to array of indices.
+    indices is array of shape (I,J,K,4) where last dimension is (i,j,k,1)
+    affine4x4 is 4x4 numpy array.
+    Returns transformed indices of same shape.
+    """
+    #print("transform_indices input:", indices)
+    (I, J, K, _) = indices.shape
+    flat_indices = indices.reshape((I*J*K, 4)).T  # shape (4, I*J*K)
+    transformed_flat = affine4x4 @ flat_indices  # matrix multiplication
+    transformed = transformed_flat.T.reshape((I, J, K, 4))
+    #print("transform_indices output:", transformed)
+    result = transformed.astype(np.int)
+    #print ("transform_indices result:", result)
+    return result
+
+# This is an alternate rotation to rotate3d that
+# seems to be slower but produces better results, maybe,
+
+def airplane_rotate_array3d(array3d, yaw, pitch, roll):
+    translate = (0, 0, 0)
+    transform_matrix = t3d.airplane_matrix(translate, yaw, pitch, roll)
+    rotated_array = rotate_array3d(array3d, transform_matrix)
+    return rotated_array
+
+def rotate_array3d(array3d, rotation3d_matrix):
+
+    """
+    Rotate the 3d array using the 3d rotation matrix,
+    choosing translation that keeps the array centered
+    and choosing the shape of the output array to fit all rotated points.
+    """
+    # determine the extents of the rotated array using the corners
+    (I, J, K) = array3d.shape[:3]
+    #print ("rotate_array3d input shape:", array3d.shape)
+    corners = np.array([
+        [0, 0, 0, 1],
+        [0, 0, K-1, 1],
+        [0, J-1, 0, 1],
+        [0, J-1, K-1, 1],
+        [I-1, 0, 0, 1],
+        [I-1, 0, K-1, 1],
+        [I-1, J-1, 0, 1],
+        [I-1, J-1, K-1, 1],
+    ])
+    #print ("rotate_array3d corners:", corners)
+    rotated_corners = (rotation3d_matrix @ corners.T).T
+    #print("rotate_array3d rotated corners:", rotated_corners)
+    min_coords = rotated_corners[:, :3].min(axis=0)
+    max_coords = rotated_corners[:, :3].max(axis=0)
+    #print("rotated corners min:", min_coords, "max:", max_coords)
+    #inverse_rotation = np.linalg.inv(rotation3d_matrix)
+    #print("rotate_array3d inverse rotation matrix:", inverse_rotation)
+    translation = -min_coords
+    #translation = center_new - center_old
+    #print("rotate_array3d translation:", translation)
+    translation_matrix = t3d.translation_matrix(*translation)
+    to_output_transform = translation_matrix @ rotation3d_matrix
+    # for testing only
+    #test_corners = (to_output_transform @ corners.T).T
+    #print ("test: rotated and translated corners", test_corners)
+    to_input_transform = np.linalg.inv(to_output_transform)
+    output_shape = (max_coords - min_coords + 1).astype(np.int)
+    rotated_array = np.zeros(output_shape, dtype=array3d.dtype)
+    output_indices = shape_indices(output_shape)
+    transformed_indices = transform_indices(output_indices, to_input_transform)
+    i_indices = transformed_indices[:, :, :, 0].ravel()
+    j_indices = transformed_indices[:, :, :, 1].ravel()
+    k_indices = transformed_indices[:, :, :, 2].ravel()
+    valid_mask = (
+        (i_indices >= 0) & (i_indices < I) &
+        (j_indices >= 0) & (j_indices < J) &
+        (k_indices >= 0) & (k_indices < K)
+    )
+    #print("i_indices", i_indices)
+    #print("j_indices", j_indices)
+    #print("k_indices", k_indices)
+    #print("valid_mask", valid_mask)
+    i_valid = i_indices[valid_mask]
+    j_valid = j_indices[valid_mask]
+    k_valid = k_indices[valid_mask]
+    values = array3d[i_valid, j_valid, k_valid]
+    #print("values", values)
+    flat = rotated_array.ravel()
+    flat[valid_mask] = values.ravel()
+    #print("flat", flat)
+    return rotated_array
 
 def shadow3d0(array3d, shadow_index_map):
     "shadow using the planes from index 0."
