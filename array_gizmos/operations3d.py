@@ -345,8 +345,40 @@ def airplane_rotate_array3d(array3d, yaw, pitch, roll):
     rotated_array = rotate_array3d(array3d, transform_matrix)
     return rotated_array
 
-def rotate_array3d(array3d, rotation3d_matrix):
+def rotate_indices(shape, rotation3d_matrix):
+    def transform(x, y, z):
+        v = np.array([x, y, z, 1.0], dtype=float)
+        t = rotation3d_matrix @ v
+        return t[:3]
+    (I, J, K) = shape
+    origin = transform(0, 0, 0)
+    dI = transform(1, 0, 0) - origin
+    dJ = transform(0, 1, 0) - origin
+    dK = transform(0, 0, 1) - origin
+    root = origin.reshape([1, 1, 3])
+    row = np.zeros([K, 3], dtype=float)
+    acc = root.copy()
+    inc = dK.reshape([1, 3])
+    for k in range(K):
+        row[k] = acc
+        acc += inc
+    lrow = row.reshape([1, K, 3])
+    layer = np.zeros([J, K, 3], dtype=float)
+    acc = lrow.copy()
+    inc = dJ.reshape([1, 1, 3])
+    for j in range(J):
+        layer[j] = acc
+        acc += inc
+    vlayer = layer.reshape([1, J, K, 3])
+    acc = vlayer.copy()
+    inc = dI.reshape([1, 1, 1, 3])
+    volume = np.zeros([I, J, K, 3], dtype=float)
+    for i in range(I):
+        volume[i] = acc
+        acc += inc
+    return volume.astype(int)
 
+def rotate_array3d(array3d, rotation3d_matrix):
     """
     Rotate the 3d array using the 3d rotation matrix,
     choosing translation that keeps the array centered
@@ -384,8 +416,9 @@ def rotate_array3d(array3d, rotation3d_matrix):
     to_input_transform = np.linalg.inv(to_output_transform)
     output_shape = (max_coords - min_coords + 1).astype(np.int)
     rotated_array = np.zeros(output_shape, dtype=array3d.dtype)
-    output_indices = shape_indices(output_shape)
-    transformed_indices = transform_indices(output_indices, to_input_transform)
+    #output_indices = shape_indices(output_shape)
+    #transformed_indices = transform_indices(output_indices, to_input_transform)
+    transformed_indices = rotate_indices(output_shape, to_input_transform)
     i_indices = transformed_indices[:, :, :, 0].ravel()
     j_indices = transformed_indices[:, :, :, 1].ravel()
     k_indices = transformed_indices[:, :, :, 2].ravel()
